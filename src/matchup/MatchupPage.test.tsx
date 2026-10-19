@@ -193,4 +193,33 @@ describe('Matchup page', () => {
 
     await waitFor(() => expect(router.state.location.search.players).toEqual(['Anna-1111', 'Cleo-3333']))
   })
+
+  it("shows which season each Player's Competitive stats come from", async () => {
+    const withSeason = (season: number) => ({ ...summary(), competitive: { pc: { season, support: null } } })
+    fakeOverfast({
+      'Anna-1111': { summary: withSeason(22), stats: anaStats(9000, 6) },
+      'Bob-2222': { summary: withSeason(18), stats: anaStats(8000, 4) },
+    })
+    renderAt('/?players=Anna-1111,Bob-2222&hero=ana&gamemode=competitive')
+
+    const anna = await screen.findByRole('columnheader', { name: 'Anna#1111' })
+    const bob = await screen.findByRole('columnheader', { name: 'Bob#2222' })
+    expect(await within(anna).findByText('Season 22')).toBeInTheDocument()
+    expect(await within(bob).findByText('Season 18')).toBeInTheDocument()
+  })
+
+  it('leaves the season out in Quick Play, where stats cover every season', async () => {
+    fakeOverfast({
+      'Anna-1111': {
+        summary: { ...summary(), competitive: { pc: { season: 22 } } },
+        stats: anaStats(9000, 6),
+      },
+      'Bob-2222': { stats: anaStats(8000, 4) },
+    })
+    renderAt('/?players=Anna-1111,Bob-2222&hero=ana&gamemode=quickplay')
+
+    const anna = await screen.findByRole('columnheader', { name: 'Anna#1111' })
+    await within(anna).findByText(/Leads/)
+    expect(within(anna).queryByText(/Season/)).not.toBeInTheDocument()
+  })
 })

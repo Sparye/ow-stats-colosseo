@@ -30,10 +30,16 @@ export type Rank = {
   rank_icon: string
 }
 
+/** A Player's ranks on one Platform, plus the season their Competitive stats come from. */
+export type CompetitiveSummary = Partial<Record<Role | 'open', Rank | null>> & {
+  /** The last season the Player played; Blizzard only shows Competitive stats for that one. */
+  season?: number | null
+}
+
 export type PlayerSummary = {
   username: string
   avatar: string | null
-  competitive: Partial<Record<Platform, Partial<Record<Role | 'open', Rank | null>> | null>> | null
+  competitive: Partial<Record<Platform, CompetitiveSummary | null>> | null
 }
 
 /** Stats for every hero the Player has played, keyed by hero key (plus `all-heroes`). */

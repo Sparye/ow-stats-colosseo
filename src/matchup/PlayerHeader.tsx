@@ -30,6 +30,8 @@ export function PlayerHeader({ slot, color, score, hero, heroName, gamemode, pla
   const display = parsed.ok ? parsed.tag.display : slot.playerId
   const summary = 'summary' in slot ? slot.summary : null
   const rank = summary && rankFor(summary, platform, hero)
+  // Competitive stats only cover the last season played; Quick Play covers every season.
+  const season = gamemode === 'competitive' ? summary?.competitive?.[platform]?.season : null
 
   if (changing) {
     return (
@@ -63,10 +65,15 @@ export function PlayerHeader({ slot, color, score, hero, heroName, gamemode, pla
               display
             )}
           </div>
-          {rank && (
+          {(rank || season) && (
             <div className="rank">
-              <img src={rank.rank_icon} alt="" />
-              {rankLabel(rank)}
+              {rank && (
+                <>
+                  <img src={rank.rank_icon} alt="" />
+                  {rankLabel(rank)}
+                </>
+              )}
+              {season && <span className="season">Season {season}</span>}
             </div>
           )}
         </div>

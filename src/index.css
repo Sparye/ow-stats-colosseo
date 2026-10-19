@@ -426,6 +426,11 @@ details[open] > summary.section-title::before {
   text-transform: uppercase;
 }
 
+.rank img + .season::before {
+  content: '·';
+  margin-right: 4px;
+}
+
 .rank img {
   width: 18px;
   height: 18px;

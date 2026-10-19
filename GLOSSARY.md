@@ -33,6 +33,9 @@ _Avoid_: Mode, queue
 **Platform**:
 PC or Console.
 
+**Season**:
+The one Competitive season a Player's Competitive stats cover: the last season they played, which can differ between Players. Quick Play stats cover every season.
+
 ### Stats
 
 **Stat Row**:

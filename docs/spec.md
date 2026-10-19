@@ -32,13 +32,15 @@ Domain terms (**Matchup**, **Player**, **Slot**, **Team Order**, **Hero Scope**,
 
 1. The user types an exact BattleTag (`Name#1234`). A malformed tag is rejected inline.
 2. A Player already in the Matchup (case-insensitive comparison) is rejected with "Already in this Matchup".
-3. Fetch `GET /players/{Name-1234}/summary`. BattleTags are case-sensitive, so on a **404** search `GET /players?name={Name}` for an account whose `#1234` matches, and use its correctly-cased ID if found. That corrected spelling is written back to the URL.
-4. If the Player is still not found, the Slot shows "Player not found (BattleTags are case-sensitive)".
+3. Fetch `GET /players/{Name-1234}/summary`. On a **404**, the Slot shows "Player not found (BattleTags are case-sensitive)".
+
+> **Changed during build:** the spec originally said to fix capitalisation by searching `GET /players?name=`. OverFast's search turned out to be case-sensitive as well (`tekrop` and `Tekrop` find nothing; only `TeKrop` does), so there's nothing to fall back on. The error message tells the user instead.
 
 ## Data fetching
 
 - For each Player, fetch **one** `GET /players/{id}/stats?gamemode=&platform=` (no `hero` parameter). It returns labelled stats for every hero they've played plus `all-heroes`, at about 30 KB. Switching hero reads from this response without another request. Changing Gamemode or Platform triggers a new fetch.
 - Header data comes from `GET /players/{id}/summary`.
+- OverFast returns the same empty stats for a **Private Profile** and for a Player with no games at all. Only then, check `GET /players?name={Name-1234}`, whose result carries `is_public`. A Player who has stats but not for the chosen hero gets the "no games" message without this check.
 - Each Player loads, fails and retries on their own (one TanStack Query per Player per request). One slow or broken Slot never blocks the others.
 - Stat labels come from the API's `label` field. Values are formatted by kind:
   - durations (in seconds) → `h:mm:ss` / `m:ss`

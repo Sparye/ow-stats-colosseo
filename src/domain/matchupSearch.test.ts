@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseMatchupSearch, stringifyMatchupSearch } from './matchupSearch'
+import { parseMatchupSearch, stringifyMatchupSearch, type MatchupSearch } from './matchupSearch'
 
 describe('parseMatchupSearch', () => {
   it('reads a shared Matchup link', () => {
@@ -58,7 +58,7 @@ describe('stringifyMatchupSearch', () => {
   })
 
   it('keeps non-Latin names readable and round-trips them', () => {
-    const search = { players: ['홍길동-31337'], hero: 'all-heroes', gamemode: 'competitive', platform: 'pc' } as const
+    const search: MatchupSearch = { players: ['홍길동-31337'], hero: 'all-heroes', gamemode: 'competitive', platform: 'pc' }
     const query = stringifyMatchupSearch(search)
     expect(query).toContain('홍길동-31337')
     expect(parseMatchupSearch(query)).toEqual(search)

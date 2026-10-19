@@ -5,9 +5,7 @@ import { heroesQuery } from '../api/queries'
 import { isSamePlayer, parseBattleTag } from '../domain/battleTag'
 import { buildComparison } from '../domain/comparison'
 import { MAX_PLAYERS, type MatchupSearch } from '../domain/matchupSearch'
-import { TEAMS } from '../domain/teamOrder'
-import { SettingsButton } from '../settings/SettingsPanel'
-import { useTeamOrder } from '../settings/teamOrder'
+import { SLOT_COLORS } from '../domain/slotColors'
 import { HeroPicker } from './HeroPicker'
 import { EmptySlotHeader, PlayerHeader } from './PlayerHeader'
 import { StatTable } from './StatTable'
@@ -24,7 +22,6 @@ export function MatchupPage() {
   const hero = heroes?.find((h) => h.key === search.hero)
   const heroName = hero?.name ?? 'All Heroes'
 
-  const [teamOrder] = useTeamOrder()
   const [wantedSlots, setWantedSlots] = useState(2)
   const slotCount = Math.min(MAX_PLAYERS, Math.max(2, wantedSlots, search.players.length))
   const slots = useSlots(search)
@@ -35,15 +32,19 @@ export function MatchupPage() {
     }),
   )
 
-  const addPlayer = (input: string): string | null => {
+  /** Adds a Player to an empty Slot, or swaps the Player in a filled one. */
+  const placePlayer = (index: number, input: string): string | null => {
     const parsed = parseBattleTag(input)
     if (!parsed.ok) return parsed.error
-    const taken = search.players.some((id) => {
+    const taken = search.players.some((id, i) => {
       const other = parseBattleTag(id)
-      return other.ok && isSamePlayer(other.tag, parsed.tag)
+      return i !== index && other.ok && isSamePlayer(other.tag, parsed.tag)
     })
     if (taken) return 'Already in this Matchup'
-    setSearch({ players: [...search.players, parsed.tag.id] })
+    if (search.players[index] === parsed.tag.id) return null
+    const players = [...search.players]
+    players[Math.min(index, players.length)] = parsed.tag.id
+    setSearch({ players })
     return null
   }
   const removeSlot = (index: number) => {
@@ -52,27 +53,27 @@ export function MatchupPage() {
   }
 
   const headers = Array.from({ length: slotCount }, (_, i) => {
-    const team = TEAMS[teamOrder[i]]
     const slot = slots[i]
-    const canRemove = slotCount > 2 || !!slot
+    const onRemove = slotCount > 2 ? () => removeSlot(i) : undefined
     return slot ? (
       <PlayerHeader
         key={slot.playerId}
         slot={slot}
-        team={team}
+        color={SLOT_COLORS[i]}
         score={comparison.scores[i]}
         hero={hero}
         heroName={heroName}
         gamemode={search.gamemode}
         platform={search.platform}
-        onRemove={canRemove ? () => removeSlot(i) : undefined}
+        onPlace={(input) => placePlayer(i, input)}
+        onRemove={onRemove}
       />
     ) : (
       <EmptySlotHeader
         key={`empty-${i}`}
-        team={team}
-        onAdd={addPlayer}
-        onRemove={canRemove ? () => removeSlot(i) : undefined}
+        color={SLOT_COLORS[i]}
+        onPlace={(input) => placePlayer(i, input)}
+        onRemove={onRemove}
       />
     )
   })
@@ -104,7 +105,6 @@ export function MatchupPage() {
             onChange={(platform) => setSearch({ platform })}
           />
           <HeroPicker heroes={heroes} selected={search.hero} onSelect={(key) => setSearch({ hero: key })} />
-          <SettingsButton />
         </div>
       </header>
 

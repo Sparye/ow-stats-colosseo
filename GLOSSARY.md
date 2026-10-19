@@ -18,9 +18,9 @@ _Avoid_: User, profile, account, contender
 A Player's position in a Matchup, numbered 1 to 5 from left to right.
 _Avoid_: Column, side, seat
 
-**Team Order**:
-A viewer's own list of five Overwatch League teams, one per Slot. Each Slot's Player takes on that team's color. It belongs to the viewer, not the Matchup, so two people opening the same Matchup can see different colors.
-_Avoid_: Theme, color scheme, palette
+**Slot Color**:
+The fixed color that marks a Slot, the same for everyone who views the Matchup.
+_Avoid_: Team color, theme, palette
 
 **Hero Scope**:
 The hero a Matchup is about: either a single hero or "All Heroes".

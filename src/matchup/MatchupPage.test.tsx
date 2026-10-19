@@ -1,5 +1,6 @@
 import { createMemoryHistory } from '@tanstack/react-router'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../App'
 import { createQueryClient } from '../api/queries'
@@ -54,6 +55,7 @@ function anaStats(healingPer10: number, deathsPer10: number) {
 function renderAt(url: string) {
   const router = createAppRouter({ history: createMemoryHistory({ initialEntries: [url] }) })
   render(<App router={router} queryClient={createQueryClient()} />)
+  return router
 }
 
 /** The cells of a Stat Row, in on-screen order, as "rowheader:text" / "cell:text". */
@@ -143,5 +145,52 @@ describe('Matchup page', () => {
 
     const ghost = await screen.findByRole('columnheader', { name: 'Ghost#9999' })
     expect(await within(ghost).findByText('Player not found (BattleTags are case-sensitive)')).toBeInTheDocument()
+  })
+
+  it('swaps the Player in a Slot with Change, keeping the Slot', async () => {
+    fakeOverfast({
+      'Anna-1111': { stats: anaStats(9000, 6) },
+      'Bob-2222': { stats: anaStats(8000, 4) },
+      'Cleo-3333': { stats: anaStats(7000, 5) },
+    })
+    const router = renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: 'Change Anna#1111' }))
+    const input = screen.getByRole('textbox', { name: 'BattleTag' })
+    expect(input).toHaveValue('Anna#1111')
+    expect(screen.queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument()
+    await user.clear(input)
+    await user.type(input, 'Cleo#3333{Enter}')
+
+    await waitFor(() => expect(router.state.location.search.players).toEqual(['Cleo-3333', 'Bob-2222']))
+    expect(await screen.findByRole('columnheader', { name: 'Cleo#3333' })).toBeInTheDocument()
+  })
+
+  it('puts the same Player back when Add is pressed without changing the BattleTag', async () => {
+    fakeOverfast({ 'Anna-1111': { stats: anaStats(9000, 6) }, 'Bob-2222': { stats: anaStats(8000, 4) } })
+    renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: 'Change Anna#1111' }))
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    expect(await screen.findByRole('button', { name: 'Change Anna#1111' })).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('offers Remove only when there are more than two Slots', async () => {
+    fakeOverfast({
+      'Anna-1111': { stats: anaStats(9000, 6) },
+      'Bob-2222': { stats: anaStats(8000, 4) },
+      'Cleo-3333': { stats: anaStats(7000, 5) },
+    })
+    const router = renderAt('/?players=Anna-1111,Bob-2222,Cleo-3333&hero=ana')
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: 'Change Bob#2222' }))
+    await user.click(screen.getByRole('button', { name: 'Remove' }))
+
+    await waitFor(() => expect(router.state.location.search.players).toEqual(['Anna-1111', 'Cleo-3333']))
   })
 })

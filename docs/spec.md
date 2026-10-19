@@ -2,7 +2,7 @@
 
 *Hero stats, head to head.*
 
-Domain terms (**Matchup**, **Player**, **Slot**, **Team Order**, **Hero Scope**, **Stat Row**, **Fair Stat**, **Volume Stat**, **Best Stat**, **Sample Size**, **Leader**, **Score**, **Private Profile**) are defined in [`GLOSSARY.md`](../GLOSSARY.md) and used here exactly as defined.
+Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**, **Stat Row**, **Fair Stat**, **Volume Stat**, **Best Stat**, **Sample Size**, **Leader**, **Score**, **Private Profile**) are defined in [`GLOSSARY.md`](../GLOSSARY.md) and used here exactly as defined.
 
 ## Stack and hosting
 
@@ -12,7 +12,10 @@ Domain terms (**Matchup**, **Player**, **Slot**, **Team Order**, **Hero Scope**,
 
 ## The Matchup
 
-- Holds **2 to 5 Players**. It starts with two empty Slots. "+ Add player" appears until there are 5. Each Slot has a × to remove its Player, but a Matchup never goes below two Slots. Players can't be reordered in v1.
+- Holds **2 to 5 Players**. It starts with two empty Slots. "+ Add player" appears until there are 5. Players can't be reordered in v1.
+- An empty Slot shows the BattleTag form with an **Add** button.
+- A filled Slot has a **Change** button at the right end of its name row, in the same spot as Add, and in every Slot, even in the two-Player layout. Change turns the header back into the BattleTag form, with the current tag filled in and selected. **Add** with a new tag swaps the Player while keeping the Slot's position and color. **Add** with the same tag puts the same Player back. There's no Cancel.
+- When there are **more than two Slots**, the form also shows a **Remove** link. That covers both the Change form and empty Slots. A Matchup never goes below two Slots.
 - One **Hero Scope** (a single hero or All Heroes), one **Gamemode** (Quick Play / Competitive) and one **Platform** (PC / Console), shared by every Player.
 - Defaults: Hero Scope **All Heroes**, Gamemode **Competitive**, Platform **PC**.
 - The hero picker lists every hero from `GET /heroes`, with portraits.
@@ -26,7 +29,6 @@ Domain terms (**Matchup**, **Player**, **Slot**, **Team Order**, **Hero Scope**,
 - `players` lists BattleTags in Slot order, with `#` replaced by `-`.
 - `hero` is a hero key or `all-heroes`.
 - Invalid or unknown values fall back to the defaults. Anything after the 5th Player is dropped.
-- Team colors are **not** in the URL (see Team Order).
 
 ## Adding a Player
 
@@ -73,8 +75,8 @@ Stats are sorted by their API key, with a short list of manual fixes for any her
 
 Top to bottom:
 
-1. Top bar: site name, Gamemode / Platform toggles, hero picker, gear icon for Settings.
-2. **Player headers**: avatar, BattleTag, team code, Score, and Competitive rank. The rank shown is for the hero's role on the chosen Platform; for All Heroes it's the highest role rank. Namecard, title and endorsement aren't shown. The header bar uses the Slot's team color.
+1. Top bar: site name, Gamemode / Platform toggles, hero picker.
+2. **Player headers**: a thin strip in the Slot Color, then avatar, BattleTag, Change button, Score, and Competitive rank. The rank shown is for the hero's role on the chosen Platform; for All Heroes it's the highest role rank. Namecard, title and endorsement aren't shown. Headers aren't mirrored in the two-Player layout; only the values are.
 3. **Sample Size** rows.
 4. **Fair Stats**: the hero's own stats first, then general ones.
 5. **Volume Stats**: collapsible, collapsed by default.
@@ -89,48 +91,21 @@ Layout depends on how many Players there are:
 
 ## Highlighting
 
-- A Leader's value is **bold** on a light tint of their Slot's team color, with a small **▲** next to it so the lead doesn't rely on color alone.
-- Text on full-strength team-color bars is black or white, whichever has more contrast.
+- A Leader's value is **bold** on a light tint of their **Slot Color**, with a small **▲** next to it so the lead doesn't rely on color alone.
 
-## Team Order and Settings
+## Slot Colors
 
-- Each Slot's color comes from the viewer's **Team Order**. Players can't pick a color per Matchup.
-- **Default Team Order**:
-  1. Dallas Fuel (DAL, `#0072CE`)
-  2. Shanghai Dragons (SHD, `#D22630`)
-  3. Houston Outlaws (HOU, `#97D700`)
-  4. Los Angeles Gladiators (GLA, `#3C1053`)
-  5. Hangzhou Spark (HZS, `#FB7299`)
-- **Settings** opens from the gear icon. It has one dropdown per Slot listing all 20 teams, each with a color preview and code. A team already used in another Slot can't be picked. There's a "Reset to default" button, and changes apply straight away to the Matchup on screen.
-- Settings holds **only the Team Order** and saves it in `localStorage`. Every read and write is wrapped in try/catch. If storage is unavailable, the default order is used without any error shown.
-- No team logos: a team is shown only as its color and three-letter code.
+Each Slot has a fixed color, the same for everyone. There are no color settings, nothing is stored in the browser, and team names and codes never appear. The colors come from Overwatch League teams, using values listed in the [`owl-colors`](https://www.npmjs.com/package/owl-colors) package (copied, not a dependency).
 
-### Team highlight colors
-
-Each team uses one bright color, picked from its official colors as listed in the [`owl-colors`](https://www.npmjs.com/package/owl-colors) package. The values are copied into our own table; the package itself is GPL-3.0 and is not a dependency.
-
-| Code | Team | Color |
+| Slot | Color | Source |
 | --- | --- | --- |
-| ATL | Atlanta Reign | `#910F1B` |
-| BOS | Boston Uprising | `#174B97` |
-| CDH | Chengdu Hunters | `#FFA000` |
-| DAL | Dallas Fuel | `#0072CE` |
-| FLA | Florida Mayhem | `#CF4691` |
-| GLA | Los Angeles Gladiators | `#3C1053` |
-| GZC | Guangzhou Charge | `#67A2B2` |
-| HOU | Houston Outlaws | `#97D700` |
-| HZS | Hangzhou Spark | `#FB7299` |
-| LDN | London Spitfire | `#59CBE8` |
-| NYE | New York Excelsior | `#0F57EA` |
-| PAR | Paris Eternal | `#8D042D` |
-| PHI | Philadelphia Fusion | `#F99E29` |
-| SEO | Seoul Dynasty | `#AA8A00` |
-| SFS | San Francisco Shock | `#FC4C02` |
-| SHD | Shanghai Dragons | `#D22630` |
-| TOR | Toronto Defiant | `#C10021` |
-| VAL | Los Angeles Valiant | `#1888C6` |
-| VAN | Vancouver Titans | `#2FB228` |
-| WAS | Washington Justice | `#990034` |
+| 1 | `#0072CE` blue | Dallas Fuel |
+| 2 | `#D22630` red | Shanghai Dragons |
+| 3 | `#97D700` green | Houston Outlaws |
+| 4 | `#3C1053` purple | Los Angeles Gladiators |
+| 5 | `#FB7299` pink | Hangzhou Spark |
+
+> **Changed after v1:** the per-viewer Team Order, its Settings panel and `localStorage` were removed, along with the team code shown in each header.
 
 ## Look and feel
 
@@ -161,8 +136,7 @@ Every error appears inside that Player's Slot. The rest of the Matchup keeps wor
   - Leader selection (ties, all tied, missing values, fewer than 2 values)
   - Score
   - URL search-param parsing and its fallbacks
-  - Team Order storage and its fallback
-- A few component tests (React Testing Library) with OverFast responses faked: the 2-Player and 3+-Player layouts, a Private Profile in one Slot, and Leader highlighting.
+- A few component tests (React Testing Library) with OverFast responses faked: the 2-Player and 3+-Player layouts, a Private Profile in one Slot, Leader highlighting, and Change / Remove.
 - No browser end-to-end tests in v1.
 
 ## Out of scope for v1
@@ -171,6 +145,6 @@ Every error appears inside that Player's Slot. The rest of the Matchup keeps wor
 - Reordering Players
 - Each Player having their own Gamemode or Platform
 - Dark mode
-- Team logos
-- Settings beyond Team Order
+- Team names, codes or logos anywhere in the Matchup
+- Any settings
 - More than 5 Players

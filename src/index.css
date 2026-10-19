@@ -144,9 +144,7 @@ main {
 }
 
 .hero-button,
-.icon-button,
-.secondary,
-.add-row button {
+.slot-button {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -166,11 +164,7 @@ main {
   border-radius: 3px;
 }
 
-.icon-button {
-  padding: 6px;
-}
-
-/* Popovers (hero picker, settings) */
+/* Hero picker popover */
 
 .panel {
   border: 1px solid var(--line);
@@ -228,50 +222,6 @@ main {
   width: 100%;
   padding: 10px;
   font-size: 15px;
-}
-
-.settings {
-  width: min(420px, calc(100vw - 32px));
-}
-
-.settings h2 {
-  margin-top: 0;
-}
-
-.team-order {
-  list-style: none;
-  padding: 0;
-  margin: 12px 0 16px;
-  display: grid;
-  gap: 8px;
-}
-
-.team-order li {
-  display: grid;
-  grid-template-columns: 52px 44px 1fr;
-  align-items: center;
-  gap: 8px;
-}
-
-.team-order label {
-  font: 600 14px/1 var(--label-font);
-  text-transform: uppercase;
-}
-
-.team-order select {
-  min-width: 0;
-  padding: 6px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--bg);
-}
-
-.swatch {
-  display: grid;
-  place-items: center;
-  height: 28px;
-  border-radius: 3px;
-  font: 700 13px/1 var(--label-font);
 }
 
 /* Stat table */
@@ -341,12 +291,12 @@ main {
 
 .value.leader {
   font-weight: 700;
-  background: color-mix(in srgb, var(--team) 16%, var(--bg));
+  background: color-mix(in srgb, var(--slot-color) 16%, var(--bg));
 }
 
 .marker {
   font-size: 11px;
-  color: color-mix(in srgb, var(--team) 80%, var(--text));
+  color: color-mix(in srgb, var(--slot-color) 80%, var(--text));
 }
 
 .section-title {
@@ -420,35 +370,31 @@ details[open] > summary.section-title::before {
   min-width: 0;
 }
 
-.team-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 26px;
-  padding: 0 4px 0 10px;
-  font: 700 14px/1 var(--label-font);
-  letter-spacing: 0.08em;
-}
-
-.team-bar .remove {
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font-size: 20px;
-  line-height: 1;
-  padding: 0 6px;
+.slot-strip {
+  height: 6px;
+  background: var(--slot-color);
 }
 
 .identity {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: 'avatar who change';
   align-items: center;
   gap: 10px;
   padding: 10px 10px 4px;
 }
 
-.mirrored .player-header:last-child .identity {
-  flex-direction: row-reverse;
-  text-align: right;
+.identity .avatar {
+  grid-area: avatar;
+}
+
+.identity .who {
+  grid-area: who;
+  min-width: 0;
+}
+
+.identity .change {
+  grid-area: change;
 }
 
 .avatar {
@@ -480,10 +426,6 @@ details[open] > summary.section-title::before {
   text-transform: uppercase;
 }
 
-.mirrored .player-header:last-child .rank {
-  justify-content: flex-end;
-}
-
 .rank img {
   width: 18px;
   height: 18px;
@@ -495,10 +437,6 @@ details[open] > summary.section-title::before {
   font-size: 14px;
 }
 
-.mirrored .player-header:last-child .status {
-  text-align: right;
-}
-
 .score {
   font: 600 15px/1 var(--label-font);
   text-transform: uppercase;
@@ -507,7 +445,7 @@ details[open] > summary.section-title::before {
 
 .score strong {
   font-size: 20px;
-  color: color-mix(in srgb, var(--team) 80%, var(--text));
+  color: color-mix(in srgb, var(--slot-color) 80%, var(--text));
 }
 
 .message {
@@ -526,6 +464,13 @@ details[open] > summary.section-title::before {
   display: grid;
   gap: 6px;
   padding: 10px;
+}
+
+.add-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
 }
 
 .add-form label {
@@ -600,22 +545,27 @@ details[open] > summary.section-title::before {
   }
 
   .identity {
-    flex-direction: column !important;
-    align-items: flex-start;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'avatar change'
+      'who who';
     gap: 6px;
   }
 
+  .identity .change {
+    justify-self: end;
+    min-height: 28px;
+    padding: 2px 8px;
+    font-size: 13px;
+  }
+
   .player-header .avatar {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
   }
 
   .battletag {
     font-size: 16px;
-  }
-
-  .mirrored .player-header:last-child .identity {
-    align-items: flex-end;
   }
 
   .hero-cell img {

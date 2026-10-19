@@ -1,8 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { Hero } from '../api/overfast'
 import type { Comparison, StatRow } from '../domain/comparison'
-import { useTeamOrder } from '../settings/teamOrder'
-import { TEAMS } from '../domain/teamOrder'
+import { SLOT_COLORS } from '../domain/slotColors'
 import { formatStat } from './format'
 
 type Props = {
@@ -18,10 +17,8 @@ type Props = {
  * column on the left (pinned when scrolling sideways) and one column per Slot.
  */
 export function StatTable({ comparison, headers, hero, heroName }: Props) {
-  const [teamOrder] = useTeamOrder()
   const slotCount = headers.length
   const mirrored = slotCount === 2
-  const colors = headers.map((_, i) => TEAMS[teamOrder[i]].color)
 
   const heroCell = (
     <div key="hero" className="hero-cell" role="columnheader" aria-label="Stat">
@@ -38,7 +35,7 @@ export function StatTable({ comparison, headers, hero, heroName }: Props) {
           key={slot}
           role="cell"
           className={`value${leads ? ' leader' : ''}`}
-          style={{ '--team': colors[slot] } as CSSProperties}
+          style={{ '--slot-color': SLOT_COLORS[slot] } as CSSProperties}
           aria-label={leads ? `${value === null ? '—' : formatStat(row.key, value)}, leads` : undefined}
         >
           {leads && (

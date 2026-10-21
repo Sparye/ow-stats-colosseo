@@ -14,6 +14,7 @@ type Props = {
   onSelect: (heroKey: string) => void
 }
 
+/** The hero cell's contents: the Hero Scope, and a button that opens the hero popover. */
 export function HeroPicker({ heroes, selected, onSelect }: Props) {
   const popover = useRef<HTMLDivElement>(null)
   const current = heroes?.find((h) => h.key === selected)
@@ -24,10 +25,16 @@ export function HeroPicker({ heroes, selected, onSelect }: Props) {
 
   return (
     <>
-      <button type="button" className="hero-button" popoverTarget="hero-picker">
-        {current && <img src={current.portrait} alt="" />}
-        <span>{current?.name ?? 'All Heroes'}</span>
-        <span aria-hidden="true">▾</span>
+      {current ? (
+        <>
+          <img className="hero-portrait" src={current.portrait} alt="" />
+          <span>{current.name}</span>
+        </>
+      ) : (
+        <span className="hero-portrait all-heroes">All Heroes</span>
+      )}
+      <button type="button" className="slot-button hero-change" popoverTarget="hero-picker">
+        {current ? 'Change Hero' : 'Select Hero'}
       </button>
       <div id="hero-picker" className="panel hero-picker" popover="auto" ref={popover} aria-label="Choose a hero">
         <button

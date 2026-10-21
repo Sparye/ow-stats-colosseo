@@ -237,6 +237,32 @@ describe('Matchup page', () => {
     expect(screen.queryByRole('button', { name: '+ Add player' })).not.toBeInTheDocument()
   })
 
+  it('picks a hero with Select Hero in the hero cell, then offers Change Hero', async () => {
+    fakeOverfast({ 'Anna-1111': { stats: anaStats(9000, 6) }, 'Bob-2222': { stats: anaStats(8000, 4) } })
+    const router = renderAt('/?players=Anna-1111,Bob-2222')
+    const user = userEvent.setup()
+
+    const heroCell = await screen.findByRole('columnheader', { name: 'Stat' })
+    expect(within(heroCell).getByText('All Heroes', { selector: '.hero-portrait' })).toBeInTheDocument()
+    const select = within(heroCell).getByRole('button', { name: 'Select Hero' })
+    expect(select).toHaveAttribute('popovertarget', 'hero-picker')
+    // jsdom has no Popover API, so the closed popover's choices stay hidden from role queries.
+    await user.click(select)
+    await user.click(await screen.findByRole('button', { name: 'Ana', hidden: true }))
+
+    await waitFor(() => expect(router.state.location.search.hero).toBe('ana'))
+    expect(await rowCells('Healing Done - Avg per 10 Min')).toEqual([
+      'cell:▲9,000',
+      'rowheader:Healing Done - Avg per 10 Min',
+      'cell:8,000',
+    ])
+    await user.click(within(heroCell).getByRole('button', { name: 'Change Hero' }))
+    await user.click(screen.getByRole('button', { name: 'All Heroes', hidden: true }))
+
+    await waitFor(() => expect(router.state.location.search.hero).toBe('all-heroes'))
+    expect(within(heroCell).getByRole('button', { name: 'Select Hero' })).toBeInTheDocument()
+  })
+
   it("shows which season each Player's Competitive stats come from", async () => {
     const withSeason = (season: number) => ({ ...summary(), competitive: { pc: { season, support: null } } })
     fakeOverfast({

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { heroesQuery } from '../api/queries'
 import { isSamePlayer, parseBattleTag } from '../domain/battleTag'
 import { buildComparison } from '../domain/comparison'
@@ -15,12 +15,16 @@ import { useSlots } from './useSlots'
 export function MatchupPage() {
   const search = useSearch({ from: '__root__' })
   const navigate = useNavigate()
+  // Every control sits in the sticky band, so changing one keeps your place in the Stat Rows.
   const setSearch = (patch: Partial<MatchupSearch>) =>
-    void navigate({ to: '/', search: { ...search, ...patch } })
+    void navigate({ to: '/', search: { ...search, ...patch }, resetScroll: false })
 
   const { data: heroes } = useQuery(heroesQuery())
   const hero = heroes?.find((h) => h.key === search.hero)
   const heroName = hero?.name ?? 'All Heroes'
+
+  const controlsBar = useRef<HTMLDivElement>(null)
+  const controlsHeight = useHeight(controlsBar)
 
   const [wantedSlots, setWantedSlots] = useState(2)
   /** The Slot "+ Add player" just made, whose input gets the cursor. */
@@ -87,12 +91,15 @@ export function MatchupPage() {
   })
 
   return (
-    <div className="page">
+    <div className="page" style={{ '--controls-height': `${controlsHeight}px` } as CSSProperties}>
       <header className="top-bar">
         <div className="brand">
           <h1>Overwatch Stats Colosseo</h1>
           <p>Hero stats, head to head</p>
         </div>
+      </header>
+
+      <div className="controls-bar" ref={controlsBar}>
         <div className="controls">
           <Toggle
             label="Gamemode"
@@ -112,17 +119,21 @@ export function MatchupPage() {
             ]}
             onChange={(platform) => setSearch({ platform })}
           />
-          <HeroPicker heroes={heroes} selected={search.hero} onSelect={(key) => setSearch({ hero: key })} />
           {slotCount < MAX_PLAYERS && (
             <button type="button" className="add-player" onClick={addSlot}>
               + Add player
             </button>
           )}
         </div>
-      </header>
+      </div>
 
       <main>
-        <StatTable comparison={comparison} headers={headers} hero={hero} heroName={heroName} />
+        <StatTable
+          comparison={comparison}
+          headers={headers}
+          heroPicker={<HeroPicker heroes={heroes} selected={search.hero} onSelect={(key) => setSearch({ hero: key })} />}
+          heroName={heroName}
+        />
       </main>
 
       <footer className="footer">
@@ -131,4 +142,19 @@ export function MatchupPage() {
       </footer>
     </div>
   )
+}
+
+/** An element's current height, so the header band can stick just below the controls. */
+function useHeight(ref: RefObject<HTMLElement | null>) {
+  const [height, setHeight] = useState(0)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => setHeight(el.getBoundingClientRect().height))
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [ref])
+
+  return height
 }

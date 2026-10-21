@@ -8,8 +8,15 @@ import { createAppRouter } from '../router'
 
 type Fake = { summary?: object; stats?: object | null; isPublic?: boolean }
 
-/** Stands in for OverFast: answers each player request from `players`, 404 otherwise. */
-function fakeOverfast(players: Record<string, Fake>) {
+/**
+ * Stands in for OverFast: answers each player request from `players`, 404 otherwise.
+ * `nextChecks` gives the epoch seconds OverFast reports for when it will look up an unknown Player again.
+ */
+function fakeOverfast(
+  players: Record<string, Fake>,
+  nextChecks: Record<string, number> = {},
+  notFoundShape: 'flat' | 'nested' = 'flat',
+) {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: string) => {
@@ -24,7 +31,11 @@ function fakeOverfast(players: Record<string, Fake>) {
       }
       const [, , rawId, ...rest] = url.pathname.split('/')
       const player = players[decodeURIComponent(rawId)]
-      if (!player) return json({ error: 'Player not found' }, 404)
+      if (!player) {
+        const nextCheckAt = nextChecks[decodeURIComponent(rawId)]
+        const details = { error: 'Player not found', ...(nextCheckAt && { next_check_at: nextCheckAt }) }
+        return json(notFoundShape === 'nested' ? { error: details } : details, 404)
+      }
       return rest.join('/') === 'summary' ? json(player.summary ?? summary()) : json(player.stats ?? null)
     }),
   )
@@ -119,7 +130,11 @@ describe('Matchup page', () => {
     renderAt('/?players=Anna-1111,Bob-2222,Hidden-3333&hero=ana')
 
     const hidden = await screen.findByRole('columnheader', { name: 'Hidden#3333' })
-    expect(await within(hidden).findByText('This profile is private')).toBeInTheDocument()
+    expect(
+      await within(hidden).findByText(
+        'This profile is private. They can make it public in Overwatch under Options → Social → Career Profile Visibility.',
+      ),
+    ).toBeInTheDocument()
     expect(await rowCells('Healing Done - Avg per 10 Min')).toEqual([
       'rowheader:Healing Done - Avg per 10 Min',
       'cell:▲9,000',
@@ -139,12 +154,26 @@ describe('Matchup page', () => {
     expect(await within(bob).findByText('No Ana games in Competitive on PC')).toBeInTheDocument()
   })
 
-  it('says when a Player does not exist', async () => {
+  it('says a Player who cannot be found may have a wrong BattleTag or a Private Profile', async () => {
     fakeOverfast({ 'Anna-1111': { stats: anaStats(9000, 6) } })
     renderAt('/?players=Anna-1111,Ghost-9999&hero=ana')
 
     const ghost = await screen.findByRole('columnheader', { name: 'Ghost#9999' })
-    expect(await within(ghost).findByText('Player not found (BattleTags are case-sensitive)')).toBeInTheDocument()
+    expect(
+      await within(ghost).findByText(
+        "Player not found. Check the BattleTag (it's case-sensitive) and that the profile is public.",
+      ),
+    ).toBeInTheDocument()
+    expect(within(ghost).queryByText(/Try again after/)).not.toBeInTheDocument()
+  })
+
+  it.each(['flat', 'nested'] as const)('says when OverFast will look for a missing Player again (%s 404)', async (shape) => {
+    const nextCheckAt = new Date(2026, 9, 21, 2, 46)
+    fakeOverfast({ 'Anna-1111': { stats: anaStats(9000, 6) } }, { 'Ghost-9999': nextCheckAt.getTime() / 1000 }, shape)
+    renderAt('/?players=Anna-1111,Ghost-9999&hero=ana')
+
+    const ghost = await screen.findByRole('columnheader', { name: 'Ghost#9999' })
+    expect(await within(ghost).findByText(/Try again after 2:46\s?am\./i)).toBeInTheDocument()
   })
 
   it('swaps the Player in a Slot with Change, keeping the Slot', async () => {

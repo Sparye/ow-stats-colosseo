@@ -34,7 +34,7 @@ Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**,
 
 1. The user types an exact BattleTag (`Name#1234`). A malformed tag is rejected inline.
 2. A Player already in the Matchup (case-insensitive comparison) is rejected with "Already in this Matchup".
-3. Fetch `GET /players/{Name-1234}/summary`. On a **404**, the Slot shows "Player not found (BattleTags are case-sensitive)".
+3. Fetch `GET /players/{Name-1234}/summary`. On a **404**, the Slot shows the not-found message below. Blizzard hides some **Private Profiles** entirely, so a 404 can mean either a mistyped BattleTag or a Private Profile.
 
 > **Changed during build:** the spec originally said to fix capitalisation by searching `GET /players?name=`. OverFast's search turned out to be case-sensitive as well (`tekrop` and `Tekrop` find nothing; only `TeKrop` does), so there's nothing to fall back on. The error message tells the user instead.
 
@@ -123,8 +123,8 @@ Every error appears inside that Player's Slot. The rest of the Matchup keeps wor
 
 | Situation | Message |
 | --- | --- |
-| Player not found (after the case fallback) | "Player not found (BattleTags are case-sensitive)" |
-| **Private Profile** | "This profile is private" |
+| Player not found (404) | "Player not found. Check the BattleTag (it's case-sensitive) and that the profile is public." When OverFast's 404 carries `next_check_at`, add "Try again after {local time}.", since until then OverFast repeats the 404 without asking Blizzard. |
+| **Private Profile** (found, but empty stats and `is_public: false`) | "This profile is private. They can make it public in Overwatch under Options → Social → Career Profile Visibility." |
 | No games on the Hero Scope | "No Ana games in Competitive" (hero and Gamemode filled in) |
 | OverFast is down or rate-limiting | "Couldn't load stats", with a Retry button |
 

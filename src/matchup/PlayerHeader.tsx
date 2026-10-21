@@ -93,8 +93,19 @@ export function PlayerHeader({ slot, color, score, hero, heroName, gamemode, pla
           </span>
         )}
         {slot.status === 'loading' && <span className="muted">Loading…</span>}
-        {slot.status === 'not-found' && <span className="message">Player not found (BattleTags are case-sensitive)</span>}
-        {slot.status === 'private' && <span className="message">This profile is private</span>}
+        {slot.status === 'not-found' && (
+          // Blizzard hides some Private Profiles entirely, so a 404 can't tell them from a mistyped BattleTag.
+          <span className="message">
+            Player not found. Check the BattleTag (it's case-sensitive) and that the profile is public.
+            {slot.nextCheckAt && <> Try again after {formatTime(slot.nextCheckAt)}.</>}
+          </span>
+        )}
+        {slot.status === 'private' && (
+          <span className="message">
+            This profile is private. They can make it public in Overwatch under Options → Social → Career Profile
+            Visibility.
+          </span>
+        )}
         {slot.status === 'no-games' && (
           <span className="message">
             No {heroName === 'All Heroes' ? '' : `${heroName} `}games in {GAMEMODE_LABELS[gamemode]} on{' '}
@@ -113,6 +124,8 @@ export function PlayerHeader({ slot, color, score, hero, heroName, gamemode, pla
     </SlotFrame>
   )
 }
+
+const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
 type EmptyProps = { color: string; onPlace: PlacePlayer; onRemove?: () => void }
 

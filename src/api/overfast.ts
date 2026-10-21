@@ -6,17 +6,29 @@ const BASE_URL = (import.meta.env.VITE_OVERFAST_URL ?? 'https://overfast-api.tek
 
 export class OverfastError extends Error {
   readonly status: number
-  constructor(status: number, message: string) {
+  /** When OverFast will next ask Blizzard about a Player it couldn't find; until then it repeats the 404. */
+  readonly nextCheckAt: Date | null
+  constructor(status: number, message: string, nextCheckAt: Date | null = null) {
     super(message)
     this.status = status
+    this.nextCheckAt = nextCheckAt
   }
 }
 
-export const isNotFound = (error: unknown) => error instanceof OverfastError && error.status === 404
+export const isNotFound = (error: unknown): error is OverfastError =>
+  error instanceof OverfastError && error.status === 404
 
 async function get<T>(path: string): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`)
-  if (!response.ok) throw new OverfastError(response.status, `OverFast ${response.status} on ${path}`)
+  if (!response.ok) {
+    // A fresh 404 nests the details under `error`; a repeated one from OverFast's cache has them at the top.
+    type Details = { next_check_at?: unknown }
+    const body = (await response.json().catch(() => null)) as (Details & { error?: Details | string }) | null
+    const nested = typeof body?.error === 'object' ? body.error.next_check_at : undefined
+    const seconds = body?.next_check_at ?? nested
+    const nextCheckAt = typeof seconds === 'number' ? new Date(seconds * 1000) : null
+    throw new OverfastError(response.status, `OverFast ${response.status} on ${path}`, nextCheckAt)
+  }
   return response.json() as Promise<T>
 }
 

@@ -6,7 +6,7 @@ import type { MatchupSearch } from '../domain/matchupSearch'
 
 export type SlotState =
   | { status: 'loading'; playerId: string }
-  | { status: 'not-found'; playerId: string }
+  | { status: 'not-found'; playerId: string; nextCheckAt: Date | null }
   | { status: 'error'; playerId: string; retry: () => void }
   | { status: 'private'; playerId: string; summary: PlayerSummary }
   | { status: 'no-games'; playerId: string; summary: PlayerSummary }
@@ -30,7 +30,8 @@ export function useSlots({ players, hero, gamemode, platform }: MatchupSearch): 
   return players.map((playerId, i): SlotState => {
     const summary = summaries[i]
     const stat = stats[i]
-    if (isNotFound(summary.error) || isNotFound(stat.error)) return { status: 'not-found', playerId }
+    const notFound = [summary.error, stat.error].find(isNotFound)
+    if (notFound) return { status: 'not-found', playerId, nextCheckAt: notFound.nextCheckAt }
     if (summary.isError || stat.isError) {
       return {
         status: 'error',

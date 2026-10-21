@@ -8,7 +8,7 @@ Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**,
 
 - Static single-page app: **Vite + React + TypeScript**, **TanStack Router** (Matchup state in typed, validated URL search params) and **TanStack Query** (per-Player fetching and caching). No backend, no TanStack Start. See [ADR 0001](adr/0001-static-spa-calling-overfast-directly.md).
 - OverFast base URL comes from `VITE_OVERFAST_URL` and defaults to `https://overfast-api.tekrop.fr`. All OverFast calls go through one client module.
-- Hosted on **Cloudflare Pages**.
+- Hosted free on **Cloudflare Pages** at https://ow-stats-colosseo.pages.dev. `npm run deploy` builds and uploads `dist/` per `wrangler.jsonc`; with no `404.html`, unknown paths fall back to the SPA.
 
 ## The Matchup
 

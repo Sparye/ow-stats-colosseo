@@ -1,0 +1,7 @@
+// Cloudflare Pages: serves the built SPA from dist/. With no 404.html, Pages
+// falls back to index.html for unknown paths.
+{
+  "name": "ow-stats-colosseo",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-10-19"
+}

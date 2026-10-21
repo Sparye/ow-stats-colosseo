@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "deploy": "npm run build && npx wrangler@4 pages deploy --branch main"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.4",

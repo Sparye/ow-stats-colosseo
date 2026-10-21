@@ -223,6 +223,20 @@ describe('Matchup page', () => {
     await waitFor(() => expect(router.state.location.search.players).toEqual(['Anna-1111', 'Cleo-3333']))
   })
 
+  it('puts the cursor in the new Slot after + Add player, and hides the button at five Slots', async () => {
+    fakeOverfast({})
+    renderAt('/')
+    const user = userEvent.setup()
+
+    for (const slots of [3, 4, 5]) {
+      await user.click(await screen.findByRole('button', { name: '+ Add player' }))
+      const inputs = screen.getAllByRole('textbox', { name: 'BattleTag' })
+      expect(inputs).toHaveLength(slots)
+      expect(inputs.at(-1)).toHaveFocus()
+    }
+    expect(screen.queryByRole('button', { name: '+ Add player' })).not.toBeInTheDocument()
+  })
+
   it("shows which season each Player's Competitive stats come from", async () => {
     const withSeason = (season: number) => ({ ...summary(), competitive: { pc: { season, support: null } } })
     fakeOverfast({

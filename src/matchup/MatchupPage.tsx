@@ -23,6 +23,8 @@ export function MatchupPage() {
   const heroName = hero?.name ?? 'All Heroes'
 
   const [wantedSlots, setWantedSlots] = useState(2)
+  /** The Slot "+ Add player" just made, whose input gets the cursor. */
+  const [addedSlot, setAddedSlot] = useState<number | null>(null)
   const slotCount = Math.min(MAX_PLAYERS, Math.max(2, wantedSlots, search.players.length))
   const slots = useSlots(search)
   const comparison = buildComparison(
@@ -47,8 +49,13 @@ export function MatchupPage() {
     setSearch({ players })
     return null
   }
+  const addSlot = () => {
+    setWantedSlots(slotCount + 1)
+    setAddedSlot(slotCount)
+  }
   const removeSlot = (index: number) => {
     setWantedSlots(Math.max(2, slotCount - 1))
+    setAddedSlot(null)
     if (index < search.players.length) setSearch({ players: search.players.filter((_, i) => i !== index) })
   }
 
@@ -74,6 +81,7 @@ export function MatchupPage() {
         color={SLOT_COLORS[i]}
         onPlace={(input) => placePlayer(i, input)}
         onRemove={onRemove}
+        autoFocus={i === addedSlot}
       />
     )
   })
@@ -105,16 +113,16 @@ export function MatchupPage() {
             onChange={(platform) => setSearch({ platform })}
           />
           <HeroPicker heroes={heroes} selected={search.hero} onSelect={(key) => setSearch({ hero: key })} />
+          {slotCount < MAX_PLAYERS && (
+            <button type="button" className="add-player" onClick={addSlot}>
+              + Add player
+            </button>
+          )}
         </div>
       </header>
 
       <main>
         <StatTable comparison={comparison} headers={headers} hero={hero} heroName={heroName} />
-        {slotCount < MAX_PLAYERS && (
-          <button type="button" className="add-player" onClick={() => setWantedSlots(slotCount + 1)}>
-            + Add player
-          </button>
-        )}
       </main>
 
       <footer className="footer">

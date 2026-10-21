@@ -12,7 +12,8 @@ Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**,
 
 ## The Matchup
 
-- Holds **2 to 5 Players**. It starts with two empty Slots. "+ Add player" appears until there are 5. Players can't be reordered in v1.
+- Holds **2 to 5 Players**. It starts with two empty Slots. Players can't be reordered in v1.
+- **"+ Add player"** sits in the top bar, at the right end of the row with the filters, so it's seen before the stats. It's hidden (not disabled) once there are 5 Slots. Clicking it adds an empty Slot, puts the cursor in that Slot's BattleTag input, and scrolls the table sideways to show it if needed.
 - An empty Slot shows the BattleTag form with an **Add** button.
 - A filled Slot has a **Change** button at the right end of its name row, in the same spot as Add, and in every Slot, even in the two-Player layout. Change turns the header back into the BattleTag form, with the current tag filled in and selected. **Add** with a new tag swaps the Player while keeping the Slot's position and color. **Add** with the same tag puts the same Player back. There's no Cancel.
 - When there are **more than two Slots**, the form also shows a **Remove** link. That covers both the Change form and empty Slots. A Matchup never goes below two Slots.
@@ -75,7 +76,7 @@ Stats are sorted by their API key, with a short list of manual fixes for any her
 
 Top to bottom:
 
-1. Top bar: site name, Gamemode / Platform toggles, hero picker.
+1. Top bar: site name, then a row with the Gamemode / Platform toggles and hero picker on the left and "+ Add player" at the right end.
 2. **Player headers**: a thin strip in the Slot Color, then avatar, BattleTag, Change button, Score, and Competitive rank. In Competitive, the rank line also shows the **Season** the stats come from (`competitive.{platform}.season` in the summary). Blizzard only publishes Competitive stats for a Player's last season played, and OverFast keeps no history ([overfast-api#30](https://github.com/TeKrop/overfast-api/issues/30)), so combined multi-season Competitive stats aren't possible. The label makes it visible when Players' seasons differ. Quick Play shows no season. The rank shown is for the hero's role on the chosen Platform; for All Heroes it's the highest role rank. Namecard, title and endorsement aren't shown. Headers aren't mirrored in the two-Player layout; only the values are.
 3. **Sample Size** rows.
 4. **Fair Stats**: the hero's own stats first, then general ones.
@@ -86,8 +87,17 @@ Top to bottom:
 Layout depends on how many Players there are:
 
 - **2 Players**: Player 1's value on the left, the stat label in the middle, Player 2's value on the right.
-- **3–5 Players**: the stat label on the left, then one value column per Slot.
-- **Narrow screens with 3+ Players**: the label column stays pinned and the value columns scroll sideways inside the table. The page itself never scrolls sideways. The 2-Player layout fits a phone screen as is.
+- **3–5 Players**: the stat label on the left, then one value column per Slot. With 4–5 Players the label column narrows (about 10rem instead of 15rem) and long labels wrap onto two lines.
+- **Narrow screens with 3+ Players**: the label column stays pinned and the value columns scroll sideways inside the table. A soft shadow on an edge shows there are columns hidden on that side. The page itself never scrolls sideways. The 2-Player layout fits a phone screen as is.
+
+### Width
+
+Like an inline database in Notion, the text stays compact and only the table grows:
+
+- The top bar and footer sit in a **centered column about 900px wide**, the width of the 2-Player table. On narrower screens they fill the screen with 16px gutters.
+- The **table** breaks out of that column, growing evenly on both sides so it stays centered. It's only as wide as its columns need (the label column plus about 13rem per Slot), never stretched to fill the screen, and at most the screen width minus gutters. Past that it scrolls sideways as above. Five Players fit a 1280px-wide screen without scrolling.
+- The width snaps when a Slot is added or removed, with no animation.
+- **Player headers never widen their column.** The BattleTag input shrinks, Add / Change / Remove stay visible, and long BattleTags wrap.
 
 ## Highlighting
 
@@ -136,7 +146,7 @@ Every error appears inside that Player's Slot. The rest of the Matchup keeps wor
   - Leader selection (ties, all tied, missing values, fewer than 2 values)
   - Score
   - URL search-param parsing and its fallbacks
-- A few component tests (React Testing Library) with OverFast responses faked: the 2-Player and 3+-Player layouts, a Private Profile in one Slot, Leader highlighting, and Change / Remove.
+- A few component tests (React Testing Library) with OverFast responses faked: the 2-Player and 3+-Player layouts, a Private Profile in one Slot, Leader highlighting, Change / Remove, and "+ Add player" focusing the new Slot.
 - No browser end-to-end tests in v1.
 
 ## Out of scope for v1

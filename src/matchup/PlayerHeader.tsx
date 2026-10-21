@@ -127,12 +127,18 @@ export function PlayerHeader({ slot, color, score, hero, heroName, gamemode, pla
 
 const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
-type EmptyProps = { color: string; onPlace: PlacePlayer; onRemove?: () => void }
+type EmptyProps = {
+  color: string
+  onPlace: PlacePlayer
+  onRemove?: () => void
+  /** Puts the cursor in the BattleTag input when the Slot appears, as after "+ Add player". */
+  autoFocus?: boolean
+}
 
-export function EmptySlotHeader({ color, onPlace, onRemove }: EmptyProps) {
+export function EmptySlotHeader({ color, onPlace, onRemove, autoFocus }: EmptyProps) {
   return (
     <SlotFrame label="Empty slot" color={color}>
-      <BattleTagForm onSubmit={onPlace} onRemove={onRemove} />
+      <BattleTagForm onSubmit={onPlace} onRemove={onRemove} autoFocus={autoFocus} />
     </SlotFrame>
   )
 }
@@ -156,9 +162,10 @@ type FormProps = {
   onSubmit: PlacePlayer
   /** Shown as a Remove link; only passed when the Matchup has more than two Slots. */
   onRemove?: () => void
+  autoFocus?: boolean
 }
 
-function BattleTagForm({ initialValue = '', onSubmit, onRemove }: FormProps) {
+function BattleTagForm({ initialValue = '', onSubmit, onRemove, autoFocus = false }: FormProps) {
   const [value, setValue] = useState(initialValue)
   const [error, setError] = useState<string | null>(null)
   const input = useRef<HTMLInputElement>(null)
@@ -167,6 +174,11 @@ function BattleTagForm({ initialValue = '', onSubmit, onRemove }: FormProps) {
   useEffect(() => {
     if (initialValue) input.current?.select()
   }, [initialValue])
+
+  // Focusing also scrolls a sideways-scrolling table over to the new Slot.
+  useEffect(() => {
+    if (autoFocus) input.current?.focus()
+  }, [autoFocus])
 
   const submit = (event: FormEvent) => {
     event.preventDefault()

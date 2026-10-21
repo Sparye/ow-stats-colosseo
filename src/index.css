@@ -60,12 +60,20 @@ img {
 }
 
 .page {
-  max-width: 1200px;
-  margin: 0 auto;
+  --text-width: 900px;
   padding: 0 16px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* Like an inline database in Notion: the top bar and footer stay in a compact
+   column and only the table grows past it, as far as its Slots need. */
+.top-bar,
+.footer {
+  width: 100%;
+  max-width: var(--text-width);
+  margin-inline: auto;
 }
 
 main {
@@ -110,8 +118,11 @@ main {
   letter-spacing: 0.08em;
 }
 
+/* Always its own row under the title, so picking a hero with a long name
+   never makes the bar jump between one and two rows. */
 .controls {
   display: flex;
+  flex: 1 0 100%;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
@@ -226,13 +237,67 @@ main {
 
 /* Stat table */
 
+.table-area {
+  --label-col: 15rem;
+  --value-min: 8.5rem;
+  --value-ideal: 13rem;
+  --table-width: calc(var(--label-col) + var(--slots) * var(--value-ideal));
+  width: min(100%, var(--table-width));
+  margin-inline: auto;
+}
+
+.table-area[data-slots='2'] {
+  --table-width: var(--text-width);
+}
+
+.table-area[data-slots='4'],
+.table-area[data-slots='5'] {
+  --label-col: 10rem;
+}
+
+/* Soft shadows on the sides with columns scrolled out of view. The left one
+   sits against the pinned label column, which the columns slide under. */
+.table-frame {
+  position: relative;
+}
+
+.table-frame::before,
+.table-frame::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 14px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.table-frame::before {
+  left: 0;
+  background: linear-gradient(to right, rgb(22 24 29 / 0.14), transparent);
+}
+
+.table-area:not([data-slots='2']) .table-frame::before {
+  left: var(--label-col);
+}
+
+.table-frame::after {
+  right: 0;
+  background: linear-gradient(to left, rgb(22 24 29 / 0.14), transparent);
+}
+
+.table-frame[data-hidden-left]::before,
+.table-frame[data-hidden-right]::after {
+  opacity: 1;
+}
+
 .table-scroll {
   overflow-x: auto;
 }
 
 .stat-table {
-  --label-col: 15rem;
-  --value-col: minmax(8.5rem, 1fr);
   min-width: min-content;
 }
 
@@ -247,7 +312,7 @@ main {
 }
 
 .stat-table.columns .row {
-  grid-template-columns: var(--label-col) repeat(var(--slots), var(--value-col));
+  grid-template-columns: var(--label-col) repeat(var(--slots), minmax(var(--value-min), 1fr));
 }
 
 .label {
@@ -368,6 +433,8 @@ details[open] > summary.section-title::before {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  /* Also keeps the header's content from widening its column: the stat values decide that. */
+  container-type: inline-size;
 }
 
 .slot-strip {
@@ -473,6 +540,8 @@ details[open] > summary.section-title::before {
 
 .add-label {
   display: flex;
+  flex-wrap: wrap;
+  gap: 2px 6px;
   justify-content: space-between;
   align-items: baseline;
   font-size: 13px;
@@ -491,7 +560,9 @@ details[open] > summary.section-title::before {
 }
 
 .add-row input {
+  /* Zero base width so the input fills the Slot instead of setting its width. */
   flex: 1;
+  width: 0;
   min-width: 0;
   padding: 6px 8px;
   border: 1px solid var(--line);
@@ -506,12 +577,14 @@ details[open] > summary.section-title::before {
   font-size: 13px;
 }
 
+/* Dashed so it reads as "add", not as another filter; set apart at the right end. */
 .add-player {
-  margin-top: 16px;
+  margin-left: auto;
   border: 1px dashed var(--muted);
   border-radius: 4px;
   background: var(--bg);
-  padding: 8px 16px;
+  padding: 4px 12px;
+  min-height: 34px;
   font: 600 15px/1.2 var(--label-font);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -528,27 +601,9 @@ details[open] > summary.section-title::before {
   color: inherit;
 }
 
-/* Phones: two Players still fit side by side; tighten everything. */
-@media (max-width: 600px) {
-  .stat-table {
-    --label-col: 9rem;
-    --value-col: minmax(7rem, 1fr);
-  }
-
-  .stat-table.mirrored .row {
-    grid-template-columns: 1fr minmax(6.5rem, 8rem) 1fr;
-  }
-
-  .label {
-    padding: 6px 4px;
-    font-size: 13px;
-  }
-
-  .value {
-    padding: 6px 8px;
-    font-size: 15px;
-  }
-
+/* Narrow Slots (phones, or many Players on a mid-size screen): avatar and
+   Change share the top row and the BattleTag gets the full width below. */
+@container (max-width: 15rem) {
   .identity {
     grid-template-columns: auto minmax(0, 1fr);
     grid-template-areas:
@@ -564,13 +619,35 @@ details[open] > summary.section-title::before {
     font-size: 13px;
   }
 
-  .player-header .avatar {
+  .identity .avatar {
     width: 28px;
     height: 28px;
   }
 
   .battletag {
     font-size: 16px;
+  }
+}
+
+/* Phones: two Players still fit side by side; tighten everything. */
+@media (max-width: 600px) {
+  .table-area[data-slots] {
+    --label-col: 9rem;
+    --value-min: 7rem;
+  }
+
+  .stat-table.mirrored .row {
+    grid-template-columns: 1fr minmax(6.5rem, 8rem) 1fr;
+  }
+
+  .label {
+    padding: 6px 4px;
+    font-size: 13px;
+  }
+
+  .value {
+    padding: 6px 8px;
+    font-size: 15px;
   }
 
   .hero-cell img {

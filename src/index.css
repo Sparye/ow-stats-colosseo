@@ -61,7 +61,8 @@ img {
 
 .page {
   --text-width: 900px;
-  padding: 0 16px;
+  --gutter: 16px;
+  padding: 0 var(--gutter);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -70,6 +71,7 @@ img {
 /* Like an inline database in Notion: the top bar and footer stay in a compact
    column and only the table grows past it, as far as its Slots need. */
 .top-bar,
+.controls,
 .footer {
   width: 100%;
   max-width: var(--text-width);
@@ -84,13 +86,7 @@ main {
 /* Top bar */
 
 .top-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px 24px;
-  padding: 20px 0 16px;
-  border-bottom: 3px solid var(--text);
+  padding-top: 20px;
 }
 
 .brand h1 {
@@ -118,14 +114,20 @@ main {
   letter-spacing: 0.08em;
 }
 
-/* Always its own row under the title, so picking a hero with a long name
-   never makes the bar jump between one and two rows. */
+/* Full width so the Stat Rows don't show either side of it when it's stuck. */
+.controls-bar {
+  margin-inline: calc(-1 * var(--gutter));
+  padding: 12px var(--gutter) 0;
+  background: var(--bg);
+}
+
 .controls {
   display: flex;
-  flex: 1 0 100%;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 3px solid var(--text);
 }
 
 .toggle {
@@ -154,7 +156,6 @@ main {
   box-shadow: inset 0 -3px 0 var(--brand);
 }
 
-.hero-button,
 .slot-button {
   display: inline-flex;
   align-items: center;
@@ -167,12 +168,6 @@ main {
   font: 600 15px/1.2 var(--label-font);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-}
-
-.hero-button img {
-  width: 24px;
-  height: 24px;
-  border-radius: 3px;
 }
 
 /* Hero picker popover */
@@ -192,7 +187,11 @@ main {
   margin: 12px 0 8px;
 }
 
+/* Opened from the hero cell, so undo the text styles it would inherit from there. */
 .hero-picker {
+  font: 400 16px/1.4 var(--body-font);
+  text-align: start;
+  text-transform: none;
   width: min(720px, calc(100vw - 32px));
   max-height: calc(100vh - 64px);
   overflow: auto;
@@ -242,8 +241,6 @@ main {
   --value-min: 8.5rem;
   --value-ideal: 13rem;
   --table-width: calc(var(--label-col) + var(--slots) * var(--value-ideal));
-  width: min(100%, var(--table-width));
-  margin-inline: auto;
 }
 
 .table-area[data-slots='2'] {
@@ -259,6 +256,8 @@ main {
    sits against the pinned label column, which the columns slide under. */
 .table-frame {
   position: relative;
+  width: min(100%, var(--table-width));
+  margin-inline: auto;
 }
 
 .table-frame::before,
@@ -295,6 +294,15 @@ main {
 
 .table-scroll {
   overflow-x: auto;
+}
+
+/* Scrolled along with the Stat Rows, whose scrollbar is the one that shows. */
+.header-scroll {
+  scrollbar-width: none;
+}
+
+.header-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .stat-table {
@@ -405,7 +413,33 @@ details[open] > summary.section-title::before {
   background: var(--panel);
 }
 
-/* Header row */
+/* Header row, in a full-width band that sticks under the controls */
+
+.header-band {
+  margin-inline: calc(-1 * var(--gutter));
+  padding-inline: var(--gutter);
+  background: var(--bg);
+  transition: box-shadow 0.15s;
+}
+
+.header-band[data-stuck] {
+  box-shadow: 0 8px 12px -8px rgb(22 24 29 / 0.22);
+}
+
+/* Only where there's room: on short screens the band would cover too many Stat Rows. */
+@media (min-height: 700px) {
+  .controls-bar {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+  }
+
+  .header-band {
+    position: sticky;
+    top: var(--controls-height, 0);
+    z-index: 3;
+  }
+}
 
 .header-row {
   border-bottom: 2px solid var(--text) !important;
@@ -423,10 +457,37 @@ details[open] > summary.section-title::before {
   text-align: center;
 }
 
-.hero-cell img {
-  width: 56px;
-  height: 56px;
+.hero-cell {
+  --portrait: 56px;
+}
+
+.hero-portrait {
+  width: var(--portrait);
+  height: var(--portrait);
   border-radius: 4px;
+}
+
+/* All Heroes has no portrait, so its name takes the portrait's place, and the
+   gap the name line would fill keeps the cell as tall as with a hero picked. */
+.hero-portrait.all-heroes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* One word per line, and wider than a phone's small portrait if "Heroes" needs it. */
+  width: min-content;
+  min-width: var(--portrait);
+  padding-inline: 4px;
+  /* The hero name line (18px at 1.1) and its gap. */
+  margin-bottom: calc(18px * 1.1 + 6px);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.05;
+}
+
+.hero-change {
+  justify-content: center;
+  text-align: center;
 }
 
 .player-header {
@@ -683,8 +744,7 @@ details[open] > summary.section-title::before {
     font-size: 15px;
   }
 
-  .hero-cell img {
-    width: 40px;
-    height: 40px;
+  .hero-cell {
+    --portrait: 40px;
   }
 }

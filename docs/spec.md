@@ -19,7 +19,10 @@ Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**,
 - When there are **more than two Slots**, the form also shows a **Remove** link. That covers both the Change form and empty Slots. A Matchup never goes below two Slots.
 - One **Hero Scope** (a single hero or All Heroes), one **Gamemode** (Quick Play / Competitive) and one **Platform** (PC / Console), shared by every Player.
 - Defaults: Hero Scope **All Heroes**, Gamemode **Competitive**, Platform **PC**.
-- The hero picker lists every hero from `GET /heroes`, with portraits.
+- The hero picker lists every hero from `GET /heroes`, with portraits. It opens from the **hero cell**, the header-row cell beside the Player headers (between them with two Players, in the pinned label column with more):
+  - With a hero picked, the cell shows its portrait, its name and a **Change Hero** button.
+  - With All Heroes, "All Heroes" sits in a portrait-sized box where the portrait would be, with a **Select Hero** button below. The cell keeps the same height either way, so the header row doesn't jump.
+  - Picking a hero keeps the page scrolled where it was.
 
 ### URL
 
@@ -80,7 +83,7 @@ Stats are sorted by their API key, with a short list of manual fixes for any her
 
 Top to bottom:
 
-1. Top bar: site name, then a row with the Gamemode / Platform toggles and hero picker on the left and "+ Add player" at the right end.
+1. Top bar: site name, then a row with the Gamemode / Platform toggles on the left and "+ Add player" at the right end.
 2. **Player headers**: a thin strip in the Slot Color, then avatar, BattleTag, Change button, Score, and Competitive rank. In Competitive, the rank line also shows the **Season** the stats come from (`competitive.{platform}.season` in the summary). Blizzard only publishes Competitive stats for a Player's last season played, and OverFast keeps no history ([overfast-api#30](https://github.com/TeKrop/overfast-api/issues/30)), so combined multi-season Competitive stats aren't possible. The label makes it visible when Players' seasons differ. Quick Play shows no season. The rank shown is for the hero's role on the chosen Platform; for All Heroes it's the highest role rank. Namecard, title and endorsement aren't shown. Headers aren't mirrored in the two-Player layout; only the values are.
 3. **Sample Size** rows.
 4. **Fair Stats**: the hero's own stats first, then general ones.
@@ -88,11 +91,13 @@ Top to bottom:
 6. **Best Stats**: collapsible, collapsed by default.
 7. Footer: "Not affiliated with or endorsed by Blizzard Entertainment. Data from OverFast API."
 
+On screens at least 700px tall, the controls row and the header row (Player headers and hero cell) stick to the top of the page as one band while the Stat Rows scroll under it. The site name scrolls away. The band has a solid background across the full screen width, and a soft shadow under it once Stat Rows are underneath. On shorter screens nothing sticks: the band would cover too many Stat Rows. Changing any control keeps the page scrolled where it was.
+
 Layout depends on how many Players there are:
 
 - **2 Players**: Player 1's value on the left, the stat label in the middle, Player 2's value on the right.
 - **3–5 Players**: the stat label on the left, then one value column per Slot. With 4–5 Players the label column narrows (about 10rem instead of 15rem) and long labels wrap onto two lines.
-- **Narrow screens with 3+ Players**: the label column stays pinned and the value columns scroll sideways inside the table. A soft shadow on an edge shows there are columns hidden on that side. The page itself never scrolls sideways. The 2-Player layout fits a phone screen as is.
+- **Narrow screens with 3+ Players**: the label column stays pinned and the value columns scroll sideways inside the table. A soft shadow on an edge shows there are columns hidden on that side. The header row scrolls sideways with the Stat Rows, whichever one is swiped, even while it's stuck to the top. The page itself never scrolls sideways. The 2-Player layout fits a phone screen as is.
 
 ### Width
 

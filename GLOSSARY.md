@@ -14,6 +14,10 @@ _Avoid_: Comparison, versus, battle
 An Overwatch account taking part in a Matchup, identified by its BattleTag (`Name#1234`).
 _Avoid_: User, profile, account, contender
 
+**Recent Players**:
+BattleTags that loaded before in this browser, suggested when typing a BattleTag.
+_Avoid_: History, favorites, saved players
+
 **Slot**:
 A Player's position in a Matchup, numbered 1 to 5 from left to right.
 _Avoid_: Column, side, seat

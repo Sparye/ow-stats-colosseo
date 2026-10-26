@@ -15,7 +15,7 @@ Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**,
 - Holds **2 to 5 Players**. It starts with two empty Slots. Players can't be reordered in v1.
 - **"+ Add player"** sits in the top bar, at the right end of the row with the filters, so it's seen before the stats. It's hidden (not disabled) once there are 5 Slots. Clicking it adds an empty Slot, puts the cursor in that Slot's BattleTag input, and scrolls the table sideways to show it if needed.
 - An empty Slot shows the BattleTag form with an **Add** button.
-- A filled Slot has a **Change** button at the right end of its name row, in the same spot as Add, and in every Slot, even in the two-Player layout. Change turns the header back into the BattleTag form, with the current tag filled in and selected. **Add** with a new tag swaps the Player while keeping the Slot's position and color. **Add** with the same tag puts the same Player back. There's no Cancel.
+- A filled Slot has a **Change** button at the right end of its name row, in the same spot as Add, and in every Slot, even in the two-Player layout. Change turns the header back into the BattleTag form, with the cursor in an empty input whose placeholder is the current tag. It's left empty so the Recent Players dropdown isn't narrowed down to that one tag. **Add** with a new tag swaps the Player while keeping the Slot's position and color. **Add** on an empty input, or with the same tag, puts the same Player back. There's no Cancel.
 - When there are **more than two Slots**, the form also shows a **Remove** link. That covers both the Change form and empty Slots. A Matchup never goes below two Slots.
 - One **Hero Scope** (a single hero or All Heroes), one **Gamemode** (Quick Play / Competitive) and one **Platform** (PC / Console), shared by every Player.
 - Defaults: Hero Scope **All Heroes**, Gamemode **Competitive**, Platform **PC**.
@@ -36,6 +36,10 @@ Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**,
 1. The user types an exact BattleTag (`Name#1234`). A malformed tag is rejected inline.
 2. A Player already in the Matchup (case-insensitive comparison) is rejected with "Already in this Matchup".
 3. Fetch `GET /players/{Name-1234}/summary`. On a **404**, the Slot shows the not-found message below. Blizzard hides some **Private Profiles** entirely, so a 404 can mean either a mistyped BattleTag or a Private Profile.
+
+### Recent Players
+
+Every BattleTag input offers **Recent Players** in a dropdown directly under it: the last 20 BattleTags whose summary loaded (so Private Profiles and Players with no games count, but a 404 never does), newest first. They're kept in this browser's `localStorage`, with the casing that last loaded, since BattleTags are case-sensitive. A Slot isn't offered Players who are in other Slots, since they'd be turned away, but its Change form does offer the Player already in it. The dropdown opens when the input gets the cursor and narrows to tags containing what's typed. Picking one with the mouse, or with ↓/↑ and Enter, places that Player straight away, without pressing Add. Escape closes it. It's our own popover, not the browser's `<datalist>`, whose native popup some embedded browsers (Orca's preview) draw away from the input. If storage is blocked, nothing is suggested and nothing else changes.
 
 > **Changed during build:** the spec originally said to fix capitalisation by searching `GET /players?name=`. OverFast's search turned out to be case-sensitive as well (`tekrop` and `Tekrop` find nothing; only `TeKrop` does), so there's nothing to fall back on. The error message tells the user instead.
 
@@ -105,7 +109,7 @@ Like an inline database in Notion, the text stays compact and only the table gro
 
 ## Slot Colors
 
-Each Slot has a fixed color, the same for everyone. There are no color settings, nothing is stored in the browser, and team names and codes never appear. The colors come from Overwatch League teams, using values listed in the [`owl-colors`](https://www.npmjs.com/package/owl-colors) package (copied, not a dependency).
+Each Slot has a fixed color, the same for everyone. There are no color settings, nothing about them is stored in the browser, and team names and codes never appear. The colors come from Overwatch League teams, using values listed in the [`owl-colors`](https://www.npmjs.com/package/owl-colors) package (copied, not a dependency).
 
 | Slot | Color | Source |
 | --- | --- | --- |

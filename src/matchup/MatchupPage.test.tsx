@@ -1,5 +1,5 @@
 import { createMemoryHistory } from '@tanstack/react-router'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../App'
@@ -69,6 +69,12 @@ function renderAt(url: string) {
   return router
 }
 
+/** The BattleTags in the open Recent Players list, in order. */
+const suggestions = () =>
+  within(screen.getByRole('listbox', { name: 'Recent Players' }))
+    .getAllByRole('option')
+    .map((option) => option.textContent)
+
 /** The cells of a Stat Row, in on-screen order, as "rowheader:text" / "cell:text". */
 async function rowCells(label: string) {
   const header = await screen.findByRole('rowheader', { name: label })
@@ -78,6 +84,7 @@ async function rowCells(label: string) {
 
 beforeEach(() => {
   vi.unstubAllGlobals()
+  localStorage.clear()
 })
 
 afterEach(() => {
@@ -186,10 +193,12 @@ describe('Matchup page', () => {
     const user = userEvent.setup()
 
     await user.click(await screen.findByRole('button', { name: 'Change Anna#1111' }))
-    const input = screen.getByRole('textbox', { name: 'BattleTag' })
-    expect(input).toHaveValue('Anna#1111')
+    const input = screen.getByRole('combobox', { name: 'BattleTag' })
+    // Empty, so the browser's suggestions aren't narrowed down to the current tag.
+    expect(input).toHaveValue('')
+    expect(input).toHaveAttribute('placeholder', 'Anna#1111')
+    expect(input).toHaveFocus()
     expect(screen.queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument()
-    await user.clear(input)
     await user.type(input, 'Cleo#3333{Enter}')
 
     await waitFor(() => expect(router.state.location.search.players).toEqual(['Cleo-3333', 'Bob-2222']))
@@ -230,11 +239,67 @@ describe('Matchup page', () => {
 
     for (const slots of [3, 4, 5]) {
       await user.click(await screen.findByRole('button', { name: '+ Add player' }))
-      const inputs = screen.getAllByRole('textbox', { name: 'BattleTag' })
+      const inputs = screen.getAllByRole('combobox', { name: 'BattleTag' })
       expect(inputs).toHaveLength(slots)
       expect(inputs.at(-1)).toHaveFocus()
     }
     expect(screen.queryByRole('button', { name: '+ Add player' })).not.toBeInTheDocument()
+  })
+
+  it('suggests BattleTags that loaded before, but not ones that were never found', async () => {
+    fakeOverfast({
+      'Anna-1111': { stats: anaStats(9000, 6) },
+      'Hidden-3333': { stats: {}, isPublic: false },
+    })
+    renderAt('/?players=Anna-1111,Hidden-3333,Ghost-9999&hero=ana')
+    await screen.findByText(/This profile is private/)
+    await screen.findByText(/Player not found/)
+    cleanup()
+
+    const router = renderAt('/?players=Anna-1111')
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('combobox', { name: 'BattleTag' }))
+    // Anna is already in this Matchup, so offering her again would only be turned away.
+    expect(suggestions()).toEqual(['Hidden#3333'])
+
+    await user.click(screen.getByRole('option', { name: 'Hidden#3333' }))
+    await waitFor(() => expect(router.state.location.search.players).toEqual(['Anna-1111', 'Hidden-3333']))
+  })
+
+  it("suggests a Slot's own Player in its Change form, since putting them back is allowed", async () => {
+    fakeOverfast({ 'Anna-1111': { stats: anaStats(9000, 6) }, 'Bob-2222': { stats: anaStats(8000, 4) } })
+    renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: 'Change Anna#1111' }))
+    // The input has the cursor, so the list is already open. Bob is in the other Slot, so only Anna can go here.
+    expect(screen.getByRole('combobox', { name: 'BattleTag' })).toHaveAttribute('aria-expanded', 'true')
+    expect(suggestions()).toEqual(['Anna#1111'])
+  })
+
+  it('narrows the suggestions as you type, and places the one picked with the keyboard', async () => {
+    localStorage.setItem('recentPlayers', JSON.stringify(['Cleo-3333', 'Dana-4444']))
+    fakeOverfast({
+      'Anna-1111': { stats: anaStats(9000, 6) },
+      'Bob-2222': { stats: anaStats(8000, 4) },
+      'Cleo-3333': { stats: anaStats(7000, 5) },
+    })
+    const router = renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: 'Change Anna#1111' }))
+    await waitFor(() => expect(suggestions()).toEqual(['Anna#1111', 'Cleo#3333', 'Dana#4444']))
+    const input = screen.getByRole('combobox', { name: 'BattleTag' })
+    await user.type(input, 'cl')
+    expect(suggestions()).toEqual(['Cleo#3333'])
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    await user.keyboard('{ArrowDown}')
+    expect(input).toHaveAttribute('aria-activedescendant', screen.getByRole('option', { name: 'Cleo#3333' }).id)
+    await user.keyboard('{Enter}')
+
+    await waitFor(() => expect(router.state.location.search.players).toEqual(['Cleo-3333', 'Bob-2222']))
   })
 
   it("shows which season each Player's Competitive stats come from", async () => {

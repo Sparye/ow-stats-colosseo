@@ -10,6 +10,7 @@ import { HeroPicker } from './HeroPicker'
 import { EmptySlotHeader, PlayerHeader } from './PlayerHeader'
 import { StatTable } from './StatTable'
 import { Toggle } from './Toggle'
+import { useRecentPlayers } from './useRecentPlayers'
 import { useSlots } from './useSlots'
 
 export function MatchupPage() {
@@ -27,6 +28,10 @@ export function MatchupPage() {
   const [addedSlot, setAddedSlot] = useState<number | null>(null)
   const slotCount = Math.min(MAX_PLAYERS, Math.max(2, wantedSlots, search.players.length))
   const slots = useSlots(search)
+  const recentPlayers = useRecentPlayers(slots)
+  /** Recent Players a Slot can take: Players in other Slots would only be turned away. */
+  const suggestionsFor = (index: number) =>
+    recentPlayers.filter((id) => !search.players.some((p, i) => i !== index && p.toLowerCase() === id.toLowerCase()))
   const comparison = buildComparison(
     Array.from({ length: slotCount }, (_, i) => {
       const slot = slots[i]
@@ -74,6 +79,7 @@ export function MatchupPage() {
         platform={search.platform}
         onPlace={(input) => placePlayer(i, input)}
         onRemove={onRemove}
+        suggestions={suggestionsFor(i)}
       />
     ) : (
       <EmptySlotHeader
@@ -82,6 +88,7 @@ export function MatchupPage() {
         onPlace={(input) => placePlayer(i, input)}
         onRemove={onRemove}
         autoFocus={i === addedSlot}
+        suggestions={suggestionsFor(i)}
       />
     )
   })

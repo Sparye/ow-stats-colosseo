@@ -3,6 +3,7 @@ import type { Hero } from '../api/overfast'
 import { parseBattleTag } from '../domain/battleTag'
 import type { Score } from '../domain/comparison'
 import type { Gamemode, Platform } from '../domain/matchupSearch'
+import { BattleTagInput } from './BattleTagInput'
 import { rankFor, rankLabel } from './format'
 import type { SlotState } from './useSlots'
 
@@ -22,9 +23,22 @@ type Props = {
   platform: Platform
   onPlace: PlacePlayer
   onRemove?: () => void
+  /** Recent Players this Slot could take, as player ids. */
+  suggestions: string[]
 }
 
-export function PlayerHeader({ slot, color, score, hero, heroName, gamemode, platform, onPlace, onRemove }: Props) {
+export function PlayerHeader({
+  slot,
+  color,
+  score,
+  hero,
+  heroName,
+  gamemode,
+  platform,
+  onPlace,
+  onRemove,
+  suggestions,
+}: Props) {
   const [changing, setChanging] = useState(false)
   const parsed = parseBattleTag(slot.playerId)
   const display = parsed.ok ? parsed.tag.display : slot.playerId
@@ -37,13 +51,16 @@ export function PlayerHeader({ slot, color, score, hero, heroName, gamemode, pla
     return (
       <SlotFrame label={display} color={color}>
         <BattleTagForm
-          initialValue={display}
+          placeholder={display}
+          autoFocus
           onSubmit={(input) => {
-            const error = onPlace(input)
+            // Add on an empty box puts the same Player back, so there's no need for Cancel.
+            const error = onPlace(input.trim() === '' ? display : input)
             if (!error) setChanging(false)
             return error
           }}
           onRemove={onRemove}
+          suggestions={suggestions}
         />
       </SlotFrame>
     )
@@ -133,12 +150,13 @@ type EmptyProps = {
   onRemove?: () => void
   /** Puts the cursor in the BattleTag input when the Slot appears, as after "+ Add player". */
   autoFocus?: boolean
+  suggestions: string[]
 }
 
-export function EmptySlotHeader({ color, onPlace, onRemove, autoFocus }: EmptyProps) {
+export function EmptySlotHeader({ color, onPlace, onRemove, autoFocus, suggestions }: EmptyProps) {
   return (
     <SlotFrame label="Empty slot" color={color}>
-      <BattleTagForm onSubmit={onPlace} onRemove={onRemove} autoFocus={autoFocus} />
+      <BattleTagForm onSubmit={onPlace} onRemove={onRemove} autoFocus={autoFocus} suggestions={suggestions} />
     </SlotFrame>
   )
 }
@@ -158,33 +176,35 @@ function SlotFrame({ label, color, children }: { label: string; color: string; c
 }
 
 type FormProps = {
-  initialValue?: string
+  placeholder?: string
   onSubmit: PlacePlayer
   /** Shown as a Remove link; only passed when the Matchup has more than two Slots. */
   onRemove?: () => void
   autoFocus?: boolean
+  /** Recent Players to offer, as player ids. */
+  suggestions: string[]
 }
 
-function BattleTagForm({ initialValue = '', onSubmit, onRemove, autoFocus = false }: FormProps) {
-  const [value, setValue] = useState(initialValue)
+function BattleTagForm({ placeholder = 'Name#1234', onSubmit, onRemove, autoFocus = false, suggestions }: FormProps) {
+  const [value, setValue] = useState('')
   const [error, setError] = useState<string | null>(null)
   const input = useRef<HTMLInputElement>(null)
   const inputId = useId()
-
-  useEffect(() => {
-    if (initialValue) input.current?.select()
-  }, [initialValue])
 
   // Focusing also scrolls a sideways-scrolling table over to the new Slot.
   useEffect(() => {
     if (autoFocus) input.current?.focus()
   }, [autoFocus])
 
+  const place = (battleTag: string) => {
+    const problem = onSubmit(battleTag)
+    setError(problem)
+    setValue(problem ? battleTag : '')
+  }
+
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    const problem = onSubmit(value)
-    setError(problem)
-    if (!problem) setValue('')
+    place(value)
   }
 
   return (
@@ -198,15 +218,15 @@ function BattleTagForm({ initialValue = '', onSubmit, onRemove, autoFocus = fals
         )}
       </div>
       <div className="add-row">
-        <input
+        <BattleTagInput
           id={inputId}
-          ref={input}
+          inputRef={input}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder="Name#1234"
-          autoComplete="off"
-          spellCheck={false}
-          aria-invalid={!!error}
+          onChange={setValue}
+          onPick={place}
+          placeholder={placeholder}
+          invalid={!!error}
+          suggestions={suggestions}
         />
         <button type="submit" className="slot-button">
           Add

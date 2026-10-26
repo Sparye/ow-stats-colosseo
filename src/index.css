@@ -577,6 +577,39 @@ details[open] > summary.section-title::before {
   font-size: 13px;
 }
 
+/* Recent Players dropdown. It's a popover, so the UA's centered placement is
+   undone here and BattleTagInput sets top, left and min-width from the input. */
+.suggestions {
+  inset: auto;
+  margin: 0;
+  padding: 4px 0;
+  max-height: 16rem;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 8px 24px rgb(22 24 29 / 0.16);
+}
+
+.suggestions li {
+  padding: 6px 10px;
+  font: 700 16px/1.2 var(--label-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.suggestions li[aria-selected='true'] {
+  background: var(--panel);
+  box-shadow: inset 3px 0 0 var(--brand);
+}
+
+.suggestions .discriminator {
+  color: var(--muted);
+  font-weight: 600;
+}
+
 /* Dashed so it reads as "add", not as another filter; set apart at the right end. */
 .add-player {
   margin-left: auto;

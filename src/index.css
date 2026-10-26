@@ -358,7 +358,8 @@ main {
 }
 
 .mirrored .value:last-child {
-  justify-content: flex-start;
+  /* Reversed, flex-end is the left edge: up against the label. */
+  justify-content: flex-end;
   flex-direction: row-reverse;
 }
 

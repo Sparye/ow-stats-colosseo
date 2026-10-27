@@ -10,7 +10,13 @@ describe('parseMatchupSearch', () => {
       hero: 'ana',
       gamemode: 'quickplay',
       platform: 'console',
+      stats: 'fair',
     })
+  })
+
+  it('reads which stats a link opens on', () => {
+    expect(parseMatchupSearch('?stats=best').stats).toBe('best')
+    expect(parseMatchupSearch('?stats=everything').stats).toBe('fair')
   })
 
   it('falls back to All Heroes, Competitive and PC', () => {
@@ -19,6 +25,7 @@ describe('parseMatchupSearch', () => {
       hero: 'all-heroes',
       gamemode: 'competitive',
       platform: 'pc',
+      stats: 'fair',
     })
   })
 
@@ -53,12 +60,19 @@ describe('stringifyMatchupSearch', () => {
         hero: 'ana',
         gamemode: 'competitive',
         platform: 'pc',
+        stats: 'fair',
       }),
     ).toBe('?players=TeKrop-2217,Other-5678&hero=ana&gamemode=competitive&platform=pc')
   })
 
+  it('adds the stats only when they are not Fair Stats', () => {
+    expect(
+      stringifyMatchupSearch({ players: [], hero: 'ana', gamemode: 'competitive', platform: 'pc', stats: 'volume' }),
+    ).toBe('?hero=ana&gamemode=competitive&platform=pc&stats=volume')
+  })
+
   it('keeps non-Latin names readable and round-trips them', () => {
-    const search: MatchupSearch = { players: ['홍길동-31337'], hero: 'all-heroes', gamemode: 'competitive', platform: 'pc' }
+    const search: MatchupSearch = { players: ['홍길동-31337'], hero: 'all-heroes', gamemode: 'competitive', platform: 'pc', stats: 'fair' }
     const query = stringifyMatchupSearch(search)
     expect(query).toContain('홍길동-31337')
     expect(parseMatchupSearch(query)).toEqual(search)
@@ -66,7 +80,7 @@ describe('stringifyMatchupSearch', () => {
 
   it('leaves out players when there are none', () => {
     expect(
-      stringifyMatchupSearch({ players: [], hero: 'all-heroes', gamemode: 'competitive', platform: 'pc' }),
+      stringifyMatchupSearch({ players: [], hero: 'all-heroes', gamemode: 'competitive', platform: 'pc', stats: 'fair' }),
     ).toBe('?hero=all-heroes&gamemode=competitive&platform=pc')
   })
 })

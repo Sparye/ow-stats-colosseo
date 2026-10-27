@@ -140,6 +140,8 @@ export function MatchupPage() {
           headers={headers}
           heroPicker={<HeroPicker heroes={heroes} selected={search.hero} onSelect={(key) => setSearch({ hero: key })} />}
           heroName={heroName}
+          section={search.stats}
+          onSectionChange={(stats) => setSearch({ stats })}
         />
       </main>
 

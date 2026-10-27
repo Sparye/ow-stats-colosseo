@@ -2,13 +2,16 @@ import { isSamePlayer, parseBattleTag, type BattleTag } from './battleTag'
 
 export const GAMEMODES = ['competitive', 'quickplay'] as const
 export const PLATFORMS = ['pc', 'console'] as const
+/** The Stat Row sections the table switches between. Sample Size is always shown. */
+export const STAT_SECTIONS = ['fair', 'volume', 'best'] as const
 export const ALL_HEROES = 'all-heroes'
 export const MAX_PLAYERS = 5
 
 export type Gamemode = (typeof GAMEMODES)[number]
 export type Platform = (typeof PLATFORMS)[number]
+export type StatSection = (typeof STAT_SECTIONS)[number]
 
-/** Everything that defines a Matchup, as it lives in the URL. */
+/** Everything that defines a Matchup, plus which stats it's showing, as it lives in the URL. */
 export type MatchupSearch = {
   /** Player ids (`Name-1234`) in Slot order. */
   players: string[]
@@ -16,6 +19,7 @@ export type MatchupSearch = {
   hero: string
   gamemode: Gamemode
   platform: Platform
+  stats: StatSection
 }
 
 const HERO_KEY = /^[a-z0-9-]+$/
@@ -28,6 +32,7 @@ export function parseMatchupSearch(query: string): MatchupSearch {
     hero: HERO_KEY.test(hero) ? hero : ALL_HEROES,
     gamemode: oneOf(GAMEMODES, params.get('gamemode')) ?? 'competitive',
     platform: oneOf(PLATFORMS, params.get('platform')) ?? 'pc',
+    stats: oneOf(STAT_SECTIONS, params.get('stats')) ?? 'fair',
   }
 }
 
@@ -35,6 +40,8 @@ export function stringifyMatchupSearch(search: MatchupSearch): string {
   const entries: Array<[string, string]> = []
   if (search.players.length > 0) entries.push(['players', search.players.join(',')])
   entries.push(['hero', search.hero], ['gamemode', search.gamemode], ['platform', search.platform])
+  // Fair Stats is where every Matchup starts, so most links don't need it.
+  if (search.stats !== 'fair') entries.push(['stats', search.stats])
   // Only escape what would break the query string, so shared links stay readable.
   const escape = (value: string) => value.replace(/[%&#+=?\s]/g, encodeURIComponent)
   return '?' + entries.map(([k, v]) => `${k}=${escape(v)}`).join('&')

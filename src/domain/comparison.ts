@@ -63,6 +63,13 @@ export function buildComparison(slots: Array<HeroStats | null>): Comparison {
   return comparison
 }
 
+/** How many of these Stat Rows each Slot leads. A shared lead counts for every Player tied for it. */
+export function leadCounts(rows: StatRow[], slotCount: number): number[] {
+  const counts = Array<number>(slotCount).fill(0)
+  for (const row of rows) for (const slot of row.leaders) counts[slot]++
+  return counts
+}
+
 function heroSpecificFirst(categories: HeroStats): HeroStats {
   return [
     ...categories.filter((c) => c.category === 'hero_specific'),

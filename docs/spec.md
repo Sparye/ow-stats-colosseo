@@ -32,6 +32,7 @@ Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**,
 
 - `players` lists BattleTags in Slot order, with `#` replaced by `-`.
 - `hero` is a hero key or `all-heroes`.
+- `stats` is `volume` or `best` when the table is showing those; it's left out for Fair Stats, where every Matchup starts.
 - Invalid or unknown values fall back to the defaults. Anything after the 5th Player is dropped.
 
 ## Adding a Player
@@ -85,13 +86,20 @@ Top to bottom:
 
 1. Top bar: site name, then a row with the Gamemode / Platform toggles on the left and "+ Add player" at the right end.
 2. **Player headers**: a thin strip in the Slot Color, then avatar, BattleTag, Change button, Score, and Competitive rank. In Competitive, the rank line also shows the **Season** the stats come from (`competitive.{platform}.season` in the summary). Blizzard only publishes Competitive stats for a Player's last season played, and OverFast keeps no history ([overfast-api#30](https://github.com/TeKrop/overfast-api/issues/30)), so combined multi-season Competitive stats aren't possible. The label makes it visible when Players' seasons differ. Quick Play shows no season. The rank shown is for the hero's role on the chosen Platform; for All Heroes it's the highest role rank. Namecard, title and endorsement aren't shown. Headers aren't mirrored in the two-Player layout; only the values are.
-3. **Sample Size** rows.
-4. **Fair Stats**: the hero's own stats first, then general ones.
-5. **Volume Stats**: collapsible, collapsed by default.
-6. **Best Stats**: collapsible, collapsed by default.
-7. Footer: "Not affiliated with or endorsed by Blizzard Entertainment. Data from OverFast API."
+3. **Section tabs**: Fair Stats, Volume Stats, Best Stats, then the **Sample Size** rows.
+4. One of **Fair Stats** (the default), **Volume Stats** or **Best Stats**, each with the hero's own stats first, then general ones, under a one-line note saying what kind of stats they are. Only one section shows at a time; the others are a click away (see Section tabs).
+5. Footer: "Not affiliated with or endorsed by Blizzard Entertainment. Data from OverFast API."
 
-On screens at least 700px tall, the controls row and the header row (Player headers and hero cell) stick to the top of the page as one band while the Stat Rows scroll under it. The site name scrolls away. The band has a solid background across the full screen width, and a soft shadow under it once Stat Rows are underneath. On shorter screens nothing sticks: the band would cover too many Stat Rows. Changing any control keeps the page scrolled where it was.
+### Section tabs
+
+Three slanted tabs under the header row switch which section's Stat Rows show, so no section is ever a long scroll away. Each tab carries a thin bar split in Slot Colors by how many of that section's Stat Rows each Player leads, so the Matchup's shape shows before opening it (a long Volume bar for the Player with the most playtime is the usual sight). The bar doesn't change the Score, which still counts Fair Stats only.
+
+- Click a tab, use ←/→/Home/End on a focused tab, or press **F**, **V** or **B** anywhere on the page except while typing or in a popover. Screens with a mouse show the key on each tab.
+- Switching while scrolled into the Stat Rows brings the table back to the top of the Sample Size, right under the stuck band, so the new section starts from its first row.
+- The choice lives in the URL (`stats`), so a shared link opens on the same section.
+- On phones the tabs drop the word "Stats".
+
+On screens at least 700px tall, the controls row and the header row (Player headers, hero cell and section tabs) stick to the top of the page as one band while the Stat Rows scroll under it. The site name scrolls away. The band has a solid background across the full screen width, and a soft shadow under it once Stat Rows are underneath. On shorter screens nothing sticks: the band would cover too many Stat Rows. Changing any control keeps the page scrolled where it was.
 
 Layout depends on how many Players there are:
 

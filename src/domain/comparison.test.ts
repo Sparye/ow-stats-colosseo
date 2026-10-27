@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildComparison, type HeroStats } from './comparison'
+import { buildComparison, leadCounts, type HeroStats } from './comparison'
 
 /** Builds OverFast-shaped hero stats from `{ category: { key: value } }`. */
 function heroStats(categories: Record<string, Record<string, number>>): HeroStats {
@@ -131,5 +131,16 @@ describe('buildComparison: Score', () => {
   it('has no Score for a Player with no stats', () => {
     const c = buildComparison([heroStats({ game: { win_percentage: 60 } }), null])
     expect(c.scores[1]).toBeNull()
+  })
+})
+
+describe('leadCounts', () => {
+  it('counts each Slot\'s leads, shared ones for every tied Player', () => {
+    const c = buildComparison([
+      heroStats({ best: { eliminations_most_in_game: 40, healing_done_most_in_game: 9000, damage_done_most_in_game: 5000 } }),
+      heroStats({ best: { eliminations_most_in_game: 40, healing_done_most_in_game: 8000, damage_done_most_in_game: 7000 } }),
+      heroStats({ best: { eliminations_most_in_game: 30, healing_done_most_in_game: 7000, damage_done_most_in_game: 6000 } }),
+    ])
+    expect(leadCounts(c.best, 3)).toEqual([2, 2, 0])
   })
 })

@@ -356,4 +356,96 @@ describe('Matchup page', () => {
     await within(anna).findByText(/Leads/)
     expect(within(anna).queryByText(/Season/)).not.toBeInTheDocument()
   })
+
+  describe('section tabs', () => {
+    /** Ana stats with one Fair, one Volume and one Best Stat. */
+    const sectionStats = (healingPer10: number, healingTotal: number, mostHealing: number) => ({
+      ana: [
+        {
+          category: 'game',
+          label: 'Game',
+          stats: [{ key: 'time_played', label: 'Time Played', value: 3600 }],
+        },
+        {
+          category: 'average',
+          label: 'Average',
+          stats: [{ key: 'healing_done_avg_per_10_min', label: 'Healing Done - Avg per 10 Min', value: healingPer10 }],
+        },
+        {
+          category: 'combat',
+          label: 'Combat',
+          stats: [{ key: 'healing_done', label: 'Healing Done', value: healingTotal }],
+        },
+        {
+          category: 'best',
+          label: 'Best',
+          stats: [{ key: 'healing_done_most_in_game', label: 'Healing Done - Most in Game', value: mostHealing }],
+        },
+      ],
+    })
+
+    beforeEach(() => {
+      fakeOverfast({
+        'Anna-1111': { stats: sectionStats(9000, 50000, 20000) },
+        'Bob-2222': { stats: sectionStats(8000, 90000, 25000) },
+      })
+    })
+
+    it('shows Fair Stats first, with the Sample Size always above', async () => {
+      renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
+
+      expect(await screen.findByRole('rowheader', { name: 'Healing Done - Avg per 10 Min' })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: 'Fair Stats' })).toHaveAttribute('aria-selected', 'true')
+      expect(screen.getByRole('rowheader', { name: 'Time Played' })).toBeInTheDocument()
+      expect(screen.queryByRole('rowheader', { name: 'Healing Done' })).not.toBeInTheDocument()
+    })
+
+    it('switches sections with a click and keeps the choice in the URL', async () => {
+      const router = renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
+      const user = userEvent.setup()
+      await screen.findByRole('rowheader', { name: 'Healing Done - Avg per 10 Min' })
+
+      await user.click(screen.getByRole('tab', { name: 'Volume Stats' }))
+
+      expect(await rowCells('Healing Done')).toEqual(['cell:50,000', 'rowheader:Healing Done', 'cell:▲90,000'])
+      expect(screen.getByRole('rowgroup', { name: 'Volume Stats' })).toBeInTheDocument()
+      expect(screen.queryByRole('rowheader', { name: 'Healing Done - Avg per 10 Min' })).not.toBeInTheDocument()
+      expect(screen.getByRole('rowheader', { name: 'Time Played' })).toBeInTheDocument()
+      await waitFor(() => expect(router.state.location.search.stats).toBe('volume'))
+    })
+
+    it('opens on the section a shared link names', async () => {
+      renderAt('/?players=Anna-1111,Bob-2222&hero=ana&stats=best')
+
+      expect(await screen.findByRole('rowheader', { name: 'Healing Done - Most in Game' })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: 'Best Stats' })).toHaveAttribute('aria-selected', 'true')
+    })
+
+    it('switches with F, V and B, and with the arrow keys on the tabs', async () => {
+      const router = renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
+      const user = userEvent.setup()
+      await screen.findByRole('rowheader', { name: 'Healing Done - Avg per 10 Min' })
+
+      await user.keyboard('b')
+      await waitFor(() => expect(router.state.location.search.stats).toBe('best'))
+      await user.keyboard('v')
+      await waitFor(() => expect(router.state.location.search.stats).toBe('volume'))
+
+      screen.getByRole('tab', { name: 'Volume Stats' }).focus()
+      await user.keyboard('{ArrowLeft}')
+      await waitFor(() => expect(router.state.location.search.stats).toBe('fair'))
+      expect(screen.getByRole('tab', { name: 'Fair Stats' })).toHaveFocus()
+    })
+
+    it("doesn't switch sections while typing a BattleTag", async () => {
+      const router = renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
+      const user = userEvent.setup()
+      await screen.findByRole('rowheader', { name: 'Healing Done - Avg per 10 Min' })
+
+      await user.click(screen.getByRole('button', { name: 'Change Anna#1111' }))
+      await user.keyboard('Bob')
+
+      expect(router.state.location.search.stats).toBe('fair')
+    })
+  })
 })

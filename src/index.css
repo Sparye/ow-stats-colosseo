@@ -373,40 +373,14 @@ main {
   color: color-mix(in srgb, var(--slot-color) 80%, var(--text));
 }
 
-.section-title {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 10px;
-  padding: 18px 12px 8px;
+.section-note {
+  padding: 14px 12px 8px;
   border-bottom: 2px solid var(--text);
-  font: 700 18px/1.2 var(--label-font);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-size: 14px;
   position: sticky;
   left: 0;
   max-width: 100vw;
-}
-
-.section-title span {
-  color: var(--muted);
-  font: 500 14px/1.2 var(--body-font);
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-summary.section-title {
-  cursor: pointer;
-  list-style: none;
-}
-
-summary.section-title::before {
-  content: '▸';
-  margin-right: 2px;
-}
-
-details[open] > summary.section-title::before {
-  content: '▾';
 }
 
 .sample .row,
@@ -444,6 +418,84 @@ details[open] > summary.section-title::before {
 
 .header-row {
   border-bottom: 2px solid var(--text) !important;
+}
+
+/* Section tabs: Overwatch-style slanted plates under the header row. The
+   padding leaves room for the slant at either end. */
+.section-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: min(100%, var(--table-width));
+  margin-inline: auto;
+  padding: 8px 6px 10px;
+}
+
+.section-tabs button {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--panel);
+  padding: 6px 12px;
+  color: var(--muted);
+  font: 700 16px/1 var(--label-font);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transform: skewX(-12deg);
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+
+.section-tabs button:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+.section-tabs button[aria-selected='true'] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+
+.tab-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em;
+  transform: skewX(12deg);
+}
+
+.tab-title kbd {
+  display: none;
+  margin-left: 4px;
+  padding: 2px 4px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font: 600 10px/1 var(--body-font);
+  opacity: 0.55;
+}
+
+/* Only where there's a keyboard to press them on. */
+@media (hover: hover) and (pointer: fine) {
+  .tab-title kbd {
+    display: inline-block;
+  }
+}
+
+/* Who leads most of the section's Stat Rows, as a tug of war in Slot Colors. */
+.lead-bar {
+  display: flex;
+  gap: 2px;
+  height: 5px;
+  border-radius: 1px;
+  overflow: hidden;
+  background: var(--line);
+}
+
+.section-tabs button[aria-selected='true'] .lead-bar {
+  background: rgb(255 255 255 / 0.2);
 }
 
 .hero-cell {
@@ -747,5 +799,20 @@ details[open] > summary.section-title::before {
 
   .hero-cell {
     --portrait: 40px;
+  }
+
+  .section-tabs {
+    gap: 6px;
+    padding-block: 8px 10px;
+  }
+
+  .section-tabs button {
+    padding-inline: 6px;
+    font-size: 15px;
+  }
+
+  /* "Fair", "Volume", "Best" are enough on a phone. */
+  .tab-suffix {
+    display: none;
   }
 }

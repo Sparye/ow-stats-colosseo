@@ -1,7 +1,24 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
-import type { Comparison, StatRow } from '../domain/comparison'
+import {
+  useEffect,
+  useEffectEvent,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+  type RefObject,
+} from 'react'
+import { leadCounts, type Comparison, type StatRow } from '../domain/comparison'
+import { STAT_SECTIONS, type StatSection } from '../domain/matchupSearch'
 import { SLOT_COLORS } from '../domain/slotColors'
 import { formatStat } from './format'
+
+const SECTIONS: Record<StatSection, { title: string; note: string; shortcut: string }> = {
+  fair: { title: 'Fair', note: "Averages and rates, so playtime doesn't decide them", shortcut: 'F' },
+  volume: { title: 'Volume', note: 'Totals that grow with playtime', shortcut: 'V' },
+  best: { title: 'Best', note: 'Single-game and single-life records', shortcut: 'B' },
+}
 
 type Props = {
   comparison: Comparison
@@ -10,6 +27,9 @@ type Props = {
   /** What goes in the hero cell: the Hero Scope and the hero picker. */
   heroPicker: ReactNode
   heroName: string
+  /** Which section's Stat Rows show under the Sample Size. */
+  section: StatSection
+  onSectionChange: (section: StatSection) => void
 }
 
 /**
@@ -18,9 +38,10 @@ type Props = {
  *
  * The header row sits in its own band so it can stick to the top of the page;
  * it can't stick from inside the sideways-scrolling Stat Rows, so it scrolls
- * sideways in step with them instead.
+ * sideways in step with them instead. The section tabs ride in the same band,
+ * so switching between Fair, Volume and Best Stats is always one click away.
  */
-export function StatTable({ comparison, headers, heroPicker, heroName }: Props) {
+export function StatTable({ comparison, headers, heroPicker, heroName, section, onSectionChange }: Props) {
   const slotCount = headers.length
   const mirrored = slotCount === 2
   const tableClass = `stat-table ${mirrored ? 'mirrored' : 'columns'}`
@@ -30,6 +51,17 @@ export function StatTable({ comparison, headers, heroPicker, heroName }: Props) 
   const hidden = useHiddenSides(scroller)
   useScrollInStep(headerScroller, scroller)
   const stuck = useRowsUnder(band, scroller)
+  const panelId = useId()
+
+  const showSection = (next: StatSection) => {
+    // Deep in the Stat Rows, start the new section from its top rather than somewhere in its middle.
+    if (band.current && scroller.current) {
+      const under = band.current.getBoundingClientRect().bottom - scroller.current.getBoundingClientRect().top
+      if (under > 1) window.scrollBy(0, -under)
+    }
+    onSectionChange(next)
+  }
+  useSectionShortcuts(showSection)
 
   const heroCell = (
     <div key="hero" className="hero-cell" role="columnheader" aria-label="Stat">
@@ -94,6 +126,12 @@ export function StatTable({ comparison, headers, heroPicker, heroName }: Props) 
             </div>
           </div>
         </div>
+        <SectionTabs
+          section={section}
+          onSelect={showSection}
+          panelId={panelId}
+          leads={(s) => leadCounts(comparison[s], slotCount)}
+        />
       </div>
 
       <div {...frameProps}>
@@ -103,9 +141,15 @@ export function StatTable({ comparison, headers, heroPicker, heroName }: Props) 
               {rows(comparison.sample)}
             </div>
 
-            <Section title="Fair Stats" note="Averages and rates, so playtime doesn't decide them" rows={rows(comparison.fair)} open />
-            <Section title="Volume Stats" note="Totals that grow with playtime" rows={rows(comparison.volume)} />
-            <Section title="Best Stats" note="Single-game and single-life records" rows={rows(comparison.best)} />
+            <div
+              role="rowgroup"
+              id={panelId}
+              className="section"
+              aria-label={`${SECTIONS[section].title} Stats`}
+            >
+              <p className="section-note">{SECTIONS[section].note}</p>
+              {rows(comparison[section])}
+            </div>
           </div>
         </div>
       </div>
@@ -196,26 +240,82 @@ function useHiddenSides(ref: RefObject<HTMLElement | null>) {
   return hidden
 }
 
-function Section({ title, note, rows, open }: { title: string; note: string; rows: ReactNode[]; open?: boolean }) {
-  if (rows.length === 0) return null
-  if (open) {
-    return (
-      <div role="rowgroup" className="section" aria-label={title}>
-        <h2 className="section-title">
-          {title} <span>{note}</span>
-        </h2>
-        {rows}
-      </div>
-    )
+type TabsProps = {
+  section: StatSection
+  onSelect: (section: StatSection) => void
+  /** The id of the rowgroup the tabs switch. */
+  panelId: string
+  /** How many of a section's Stat Rows each Slot leads. */
+  leads: (section: StatSection) => number[]
+}
+
+/**
+ * One tab per section, each with a tug-of-war bar of who leads most of its
+ * Stat Rows in their Slot Color. Arrow keys move between the tabs.
+ */
+function SectionTabs({ section, onSelect, panelId, leads }: TabsProps) {
+  const onKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const at = STAT_SECTIONS.indexOf(section)
+    const last = STAT_SECTIONS.length - 1
+    const to = { ArrowLeft: at - 1, ArrowRight: at + 1, Home: 0, End: last }[event.key]
+    if (to === undefined) return
+    event.preventDefault()
+    const index = Math.min(last, Math.max(0, to))
+    event.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]')[index]?.focus()
+    onSelect(STAT_SECTIONS[index])
   }
+
   return (
-    <details className="section">
-      <summary className="section-title">
-        {title} <span>{note}</span>
-      </summary>
-      <div role="rowgroup" aria-label={title}>
-        {rows}
-      </div>
-    </details>
+    <div className="section-tabs" role="tablist" aria-label="Stats" onKeyDown={onKeyDown}>
+      {STAT_SECTIONS.map((s) => {
+        const { title, shortcut } = SECTIONS[s]
+        return (
+          <button
+            key={s}
+            type="button"
+            role="tab"
+            aria-selected={s === section}
+            aria-controls={panelId}
+            aria-keyshortcuts={shortcut}
+            tabIndex={s === section ? 0 : -1}
+            onClick={() => onSelect(s)}
+          >
+            <span className="tab-title">
+              {title} <span className="tab-suffix">Stats</span>
+              <kbd aria-hidden="true">{shortcut}</kbd>
+            </span>
+            <LeadBar counts={leads(s)} />
+          </button>
+        )
+      })}
+    </div>
   )
+}
+
+function LeadBar({ counts }: { counts: number[] }) {
+  return (
+    <span className="lead-bar" aria-hidden="true">
+      {counts.map(
+        (count, slot) => count > 0 && <span key={slot} style={{ flexGrow: count, background: SLOT_COLORS[slot] }} />,
+      )}
+    </span>
+  )
+}
+
+/** F, V and B switch sections from anywhere on the page, except while typing or in a popover. */
+function useSectionShortcuts(show: (section: StatSection) => void) {
+  const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return
+    const target = event.target instanceof Element ? event.target : null
+    if (target?.closest('input, textarea, select, [contenteditable], [popover]')) return
+    const key = event.key.toUpperCase()
+    const section = STAT_SECTIONS.find((s) => SECTIONS[s].shortcut === key)
+    if (section) show(section)
+  })
+
+  useEffect(() => {
+    const listener = (event: KeyboardEvent) => onKeyDown(event)
+    window.addEventListener('keydown', listener)
+    return () => window.removeEventListener('keydown', listener)
+  }, [])
 }

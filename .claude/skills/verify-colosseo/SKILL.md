@@ -5,7 +5,7 @@ description: Drive Overwatch Stats Colosseo (the React web app in this repo) in 
 
 # Verify Overwatch Stats Colosseo
 
-The app is a static React SPA (`src/`) that calls the public OverFast API (`https://overfast-api.tekrop.fr`) straight from the browser. There's no backend, database, or login. Everything a user does lives in the URL (`?players=&hero=&gamemode=&platform=`) plus one `localStorage` key, `recentPlayers`. Words like Matchup, Slot, Leader and Score are defined in `GLOSSARY.md`.
+The app is a static React SPA (`src/`) that calls the public OverFast API (`https://overfast-api.tekrop.fr`) straight from the browser. There's no backend, database, or login. Everything a user does lives in the URL (`?players=&hero=&gamemode=&platform=&stats=`) plus one `localStorage` key, `recentPlayers`. Words like Matchup, Slot, Leader and Score are defined in `GLOSSARY.md`.
 
 Every step goes through `scripts/control.sh`, run from anywhere in the repo:
 
@@ -80,7 +80,8 @@ Stable handles, as the snapshot shows them:
 - **Recent Players dropdown:** `listbox "Recent Players"` containing `option "<Name>#<digits>"`. It opens when the input gets the cursor, narrows as you type, and picking an option places that Player straight away. It's a popover in the top layer, so it shows in screenshots.
 - **Top bar:** `radio "COMPETITIVE"`, `radio "QUICK PLAY"`, `radio "PC"`, `radio "CONSOLE"`, `button "+ ADD PLAYER"`. The hero button is named after the current hero (`button "ANA"`, `button "ALL HEROES"`).
 - **Hero picker:** a popover whose buttons are named after heroes.
-- **Stat table:** `table "<Hero> stats"`, with sections `rowgroup "Sample Size"`, `"Fair Stats"`, `"Volume Stats"` and `"Best Stats"`.
+- **Stat table:** `table "<Hero> stats"`, with `rowgroup "Sample Size"` and one section rowgroup, `"Fair Stats"`, `"Volume Stats"` or `"Best Stats"`, whichever is showing.
+- **Section tabs:** `tablist "Stats"` containing `tab "Fair Stats"`, `tab "Volume Stats"`, `tab "Best Stats"`, with `selected` on the one showing. Pressing `f`/`v`/`b` needs `$S orca keypress --key v` with focus outside an input; `location.search` gains `stats=volume`/`stats=best`.
 - **Stat Rows:** a `rowheader` for the label. A Leader's cell is named `"<value>, leads"`.
 - **CSS hooks for `wait`/`js`:** `.score` (one per Slot that has a Score), `.message` (Slot errors and statuses), `.add-player`.
 

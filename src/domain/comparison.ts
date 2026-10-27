@@ -1,3 +1,4 @@
+import { STAT_SECTIONS, type StatSection } from './matchupSearch'
 import { isLowerBetter, statKind } from './statKind'
 
 /** One hero's stats for one Player, as OverFast's `/players/{id}/stats` returns them. */
@@ -23,15 +24,15 @@ export type Comparison = {
   fair: StatRow[]
   volume: StatRow[]
   best: StatRow[]
-  /** One per Slot; `null` for a Slot with no stats. */
-  scores: Array<Score | null>
+  /** Each section's Scores, one per Slot; `null` for a Slot with no stats. */
+  scores: Record<StatSection, Array<Score | null>>
 }
 
 const SAMPLE_ORDER = ['time_played', 'games_played']
 
 /**
  * Lines up each Slot's stats into Stat Rows, finds each row's Leaders and
- * counts every Player's Score. Pass `null` for a Slot with no stats to compare
+ * counts every Player's Score in each section. Pass `null` for a Slot with no stats to compare
  * (empty, loading, private, or hasn't played the hero).
  */
 export function buildComparison(slots: Array<HeroStats | null>): Comparison {
@@ -47,7 +48,7 @@ export function buildComparison(slots: Array<HeroStats | null>): Comparison {
     return values
   })
 
-  const comparison: Comparison = { sample: [], fair: [], volume: [], best: [], scores: [] }
+  const comparison: Comparison = { sample: [], fair: [], volume: [], best: [], scores: { fair: [], volume: [], best: [] } }
   for (const [key, label] of labels) {
     const values = valuesBySlot.map((v) => v.get(key) ?? null)
     const kind = statKind(key)
@@ -56,10 +57,12 @@ export function buildComparison(slots: Array<HeroStats | null>): Comparison {
   }
   comparison.sample.sort((a, b) => SAMPLE_ORDER.indexOf(a.key) - SAMPLE_ORDER.indexOf(b.key))
 
-  const contested = comparison.fair.filter((r) => r.leaders.length > 0)
-  comparison.scores = slots.map((stats, slot) =>
-    stats ? { leads: contested.filter((r) => r.leaders.includes(slot)).length, of: contested.length } : null,
-  )
+  for (const section of STAT_SECTIONS) {
+    const contested = comparison[section].filter((r) => r.leaders.length > 0)
+    comparison.scores[section] = slots.map((stats, slot) =>
+      stats ? { leads: contested.filter((r) => r.leaders.includes(slot)).length, of: contested.length } : null,
+    )
+  }
   return comparison
 }
 

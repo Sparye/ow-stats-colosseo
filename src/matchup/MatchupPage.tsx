@@ -76,7 +76,7 @@ export function MatchupPage() {
         key={slot.playerId}
         slot={slot}
         color={SLOT_COLORS[i]}
-        score={comparison.scores[i]}
+        score={comparison.scores[search.stats][i]}
         hero={hero}
         heroName={heroName}
         gamemode={search.gamemode}

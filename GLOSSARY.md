@@ -69,7 +69,7 @@ A Player highlighted on a Stat Row for having the best value. Players tied for b
 _Avoid_: Winner, best player
 
 **Score**:
-How many Fair Stat rows a Player leads, out of the Fair Stat rows that have a Leader. A shared lead counts for every Player tied for it.
+How many Stat Rows a Player leads in the section on show (Fair, Volume or Best Stats), out of that section's Stat Rows that have a Leader. A shared lead counts for every Player tied for it.
 _Avoid_: Wins, points
 
 **Private Profile**:

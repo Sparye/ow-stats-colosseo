@@ -82,17 +82,16 @@ export function PlayerHeader({
               display
             )}
           </div>
-          {(rank || season) && (
-            <div className="rank">
-              {rank && (
-                <>
-                  <img src={rank.rank_icon} alt="" />
-                  {rankLabel(rank)}
-                </>
-              )}
-              {season && <span className="season">Season {season}</span>}
-            </div>
-          )}
+          {/* Always there, even empty, so every Player's Score sits at the same height. */}
+          <div className="rank">
+            {rank && (
+              <>
+                <img src={rank.rank_icon} alt="" />
+                {rankLabel(rank)}
+              </>
+            )}
+            {season && <span className="season">Season {season}</span>}
+          </div>
         </div>
         <button
           type="button"

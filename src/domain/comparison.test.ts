@@ -121,16 +121,35 @@ describe('buildComparison: Score', () => {
       }),
     ])
     // Fair rows with a Leader: win % (P0), elims (P0+P1 shared), deaths (P1), healing (P0).
-    expect(c.scores).toEqual([
+    expect(c.scores.fair).toEqual([
       { leads: 3, of: 4 },
       { leads: 2, of: 4 },
       { leads: 0, of: 4 },
     ])
   })
 
+  it('counts each section on its own', () => {
+    const c = buildComparison([
+      heroStats({ game: { win_percentage: 60 }, combat: { eliminations: 1 } }),
+      heroStats({ game: { win_percentage: 40 }, combat: { eliminations: 999 } }),
+    ])
+    expect(c.scores.fair).toEqual([
+      { leads: 1, of: 1 },
+      { leads: 0, of: 1 },
+    ])
+    expect(c.scores.volume).toEqual([
+      { leads: 0, of: 1 },
+      { leads: 1, of: 1 },
+    ])
+    expect(c.scores.best).toEqual([
+      { leads: 0, of: 0 },
+      { leads: 0, of: 0 },
+    ])
+  })
+
   it('has no Score for a Player with no stats', () => {
     const c = buildComparison([heroStats({ game: { win_percentage: 60 } }), null])
-    expect(c.scores[1]).toBeNull()
+    expect(c.scores.fair[1]).toBeNull()
   })
 })
 

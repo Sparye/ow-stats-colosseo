@@ -602,6 +602,7 @@ main {
   align-items: center;
   gap: 4px;
   margin-top: 2px;
+  min-height: 18px;
   color: var(--muted);
   font: 600 13px/1 var(--label-font);
   text-transform: uppercase;

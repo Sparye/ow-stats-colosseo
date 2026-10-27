@@ -1,6 +1,6 @@
 # Compare stats
 
-Once Players load, each Stat Row shows every Player's value, and the best value is marked as the Leader. Each Player's header shows their Score (how many Fair Stat rows they lead), their rank, and, in Competitive, the Season their stats come from. Two Players get a mirrored layout with the label in the middle; three or more get the label on the left.
+Once Players load, each Stat Row shows every Player's value, and the best value is marked as the Leader. Each Player's header shows their Score (how many Stat Rows they lead in the open section), their rank, and, in Competitive, the Season their stats come from. Two Players get a mirrored layout with the label in the middle; three or more get the label on the left.
 
 ## Sub-features
 
@@ -33,5 +33,5 @@ Preconditions:
 
 - Values change as the Test Players play. Assert on Leaders, Score format and layout, not on numbers.
 - A Player missing a stat isn't compared on that row, so a row can have no Leader.
-- The Score counts Fair Stat rows only. Volume and Best Leaders don't add to it, though they do fill those tabs' lead bars.
+- The Score counts the open section's Stat Rows, so it changes when you switch between Fair, Volume and Best.
 - A screenshot taken right after a scripted `scrollTo` can show the sticky band in a stale spot. Measure with `js`, or shoot again a moment later.

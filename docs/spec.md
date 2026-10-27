@@ -78,7 +78,7 @@ Stats are sorted by their API key, with a short list of manual fixes for any her
 - On each Stat Row, only Players who have a value are compared. A row needs **at least 2** values to have a Leader.
 - Every Player tied for the best value is a Leader, **unless every compared Player is tied**, in which case there is none.
 - A Player without the stat shows "—".
-- **Score** = Fair Stat rows the Player leads ÷ Fair Stat rows that have a Leader, shown as "Leads 9 of 14". A shared lead counts for each tied Player. Volume and Best Stats never count.
+- **Score** = Stat Rows the Player leads ÷ Stat Rows that have a Leader, in the section on show (Fair, Volume or Best), shown as "Leads 9 of 14". It changes with the section tab. A shared lead counts for each tied Player. Sample Size rows never count.
 
 ## Layout
 
@@ -92,7 +92,7 @@ Top to bottom:
 
 ### Section tabs
 
-Three slanted tabs under the header row switch which section's Stat Rows show, so no section is ever a long scroll away. Each tab carries a thin bar split in Slot Colors by how many of that section's Stat Rows each Player leads, so the Matchup's shape shows before opening it (a long Volume bar for the Player with the most playtime is the usual sight). The bar doesn't change the Score, which still counts Fair Stats only.
+Three slanted tabs under the header row switch which section's Stat Rows show, so no section is ever a long scroll away. Each tab carries a thin bar split in Slot Colors by how many of that section's Stat Rows each Player leads, so the Matchup's shape shows before opening it (a long Volume bar for the Player with the most playtime is the usual sight). The open tab's section is also what the Score in each Player header counts.
 
 - Click a tab, use ←/→/Home/End on a focused tab, or press **F**, **V** or **B** anywhere on the page except while typing or in a popover. Screens with a mouse show the key on each tab.
 - Switching while scrolled into the Stat Rows brings the table back to the top of the Sample Size, right under the stuck band, so the new section starts from its first row.

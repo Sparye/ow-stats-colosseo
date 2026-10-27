@@ -404,10 +404,14 @@ describe('Matchup page', () => {
       const router = renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
       const user = userEvent.setup()
       await screen.findByRole('rowheader', { name: 'Healing Done - Avg per 10 Min' })
+      const annaScore = () => within(screen.getByRole('columnheader', { name: 'Anna#1111' })).getByText(/Leads/)
+      expect(annaScore()).toHaveTextContent('Leads 1 of 1')
 
       await user.click(screen.getByRole('tab', { name: 'Volume Stats' }))
 
       expect(await rowCells('Healing Done')).toEqual(['cell:50,000', 'rowheader:Healing Done', 'cell:▲90,000'])
+      // The Score counts the section on show.
+      expect(annaScore()).toHaveTextContent('Leads 0 of 1')
       expect(screen.getByRole('rowgroup', { name: 'Volume Stats' })).toBeInTheDocument()
       expect(screen.queryByRole('rowheader', { name: 'Healing Done - Avg per 10 Min' })).not.toBeInTheDocument()
       expect(screen.getByRole('rowheader', { name: 'Time Played' })).toBeInTheDocument()

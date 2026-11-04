@@ -152,7 +152,16 @@ cmd_snap() {
 # shot <name>: saves a viewport screenshot as evidence/<name>.png
 cmd_shot() {
   load_state
-  o screenshot | jq -r '.result.data' | base64 -d > "$EVIDENCE/$1.png"
+  # Newer Orca builds hand back a temp file path; older ones send base64 data.
+  local result
+  result="$(o screenshot)"
+  local path
+  path="$(jq -r '.result.path // empty' <<<"$result")"
+  if [[ -n "$path" ]]; then
+    cp "$path" "$EVIDENCE/$1.png"
+  else
+    jq -r '.result.data' <<<"$result" | base64 -d > "$EVIDENCE/$1.png"
+  fi
   log_action "shot $1"
   echo "$EVIDENCE/$1.png"
 }

@@ -2,7 +2,6 @@ import { QueryClient, queryOptions } from '@tanstack/react-query'
 import type { Gamemode, Platform } from '../domain/matchupSearch'
 import {
   OverfastError,
-  getHeroDetails,
   getHeroes,
   getPlayerStats,
   getPlayerStatsSummary,
@@ -39,13 +38,6 @@ export const playerStatsQuery = (playerId: string, gamemode: Gamemode, platform:
 
 export const playerPrivacyQuery = (playerId: string) =>
   queryOptions({ queryKey: ['player', playerId, 'public'], queryFn: () => isPublicProfile(playerId) })
-
-export const heroDetailsQuery = (heroKey: string) =>
-  queryOptions({
-    queryKey: ['heroes', heroKey],
-    queryFn: () => getHeroDetails(heroKey),
-    staleTime: 24 * 60 * 60 * 1000,
-  })
 
 export const playerStatsSummaryQuery = (playerId: string, gamemode: Gamemode, platform: Platform) =>
   queryOptions({

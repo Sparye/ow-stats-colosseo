@@ -82,11 +82,6 @@ export async function isPublicProfile(playerId: string): Promise<boolean> {
   return results.find((r) => r.player_id === playerId)?.is_public ?? true
 }
 
-/** The part of `GET /heroes/{hero_key}` the hero cell shows. */
-export type HeroDetails = { subrole: string | null }
-
-export const getHeroDetails = (heroKey: string) => get<HeroDetails>(`/heroes/${encodeURIComponent(heroKey)}`)
-
 /** One hero or role's totals, as `/players/{id}/stats/summary` returns them. */
 export type StatsSummaryEntry = {
   games_played: number

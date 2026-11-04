@@ -34,8 +34,6 @@ function fakeOverfast(
           { key: 'mercy', name: 'Mercy', portrait: 'https://example.test/mercy.png', role: 'support' },
         ])
       }
-      if (url.pathname === '/heroes/ana') return json({ subrole: 'tactician' })
-      if (url.pathname.startsWith('/heroes/')) return json({ error: 'Nope' }, 500)
       if (url.pathname === '/players') {
         const id = url.searchParams.get('name')!
         return json({ results: [{ player_id: id, is_public: players[id]?.isPublic ?? true }] })
@@ -127,19 +125,6 @@ describe('Matchup page', () => {
     expect(within(screen.getByRole('columnheader', { name: 'Anna#1111' })).getByText(/Leads/)).toHaveTextContent(
       'Leads 1 of 2',
     )
-  })
-
-  it("shows the picked hero's Subrole in the hero cell", async () => {
-    fakeOverfast({ 'Anna-1111': { stats: anaStats(9000, 6) }, 'Bob-2222': { stats: anaStats(8000, 4) } })
-    renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
-    expect(await screen.findByText('tactician')).toHaveClass('hero-subrole')
-  })
-
-  it("leaves the Subrole line empty when the hero's details can't load", async () => {
-    fakeOverfast({ 'Anna-1111': { stats: anaStats(9000, 6) }, 'Bob-2222': { stats: anaStats(8000, 4) } })
-    renderAt('/?players=Anna-1111,Bob-2222&hero=mercy')
-    await screen.findByRole('button', { name: 'Change Hero' })
-    expect(document.querySelector('.hero-subrole')).toBeEmptyDOMElement()
   })
 
   it('moves the stat label to the left with three Players', async () => {

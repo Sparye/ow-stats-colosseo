@@ -1,7 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
 import { useRef } from 'react'
 import type { Hero, Role } from '../api/overfast'
-import { heroDetailsQuery } from '../api/queries'
 import { ALL_HEROES } from '../domain/matchupSearch'
 
 const ROLES: Array<{ role: Role; label: string }> = [
@@ -20,8 +18,6 @@ type Props = {
 export function HeroPicker({ heroes, selected, onSelect }: Props) {
   const popover = useRef<HTMLDivElement>(null)
   const current = heroes?.find((h) => h.key === selected)
-  // An extra only: until it loads, or if it can't, the Subrole line stays empty.
-  const { data: details } = useQuery({ ...heroDetailsQuery(selected), enabled: Boolean(current) })
   const choose = (key: string) => {
     onSelect(key)
     popover.current?.hidePopover()
@@ -32,10 +28,7 @@ export function HeroPicker({ heroes, selected, onSelect }: Props) {
       {current ? (
         <>
           <img className="hero-portrait" src={current.portrait} alt="" />
-          <span>
-            {current.name}
-            <span className="hero-subrole">{details?.subrole}</span>
-          </span>
+          <span>{current.name}</span>
         </>
       ) : (
         <span className="hero-portrait all-heroes">All Heroes</span>

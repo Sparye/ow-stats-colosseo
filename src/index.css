@@ -654,22 +654,12 @@ main {
   width: min-content;
   min-width: var(--portrait);
   padding-inline: 4px;
-  /* The hero name line (18px at 1.1), the Subrole line under it, and its gap. */
-  margin-bottom: calc(18px * 1.1 + 2px + 13px + 6px);
+  /* The hero name line (18px at 1.1) and its gap. */
+  margin-bottom: calc(18px * 1.1 + 6px);
   background: var(--panel);
   color: var(--muted);
   font-size: 13px;
   line-height: 1.05;
-}
-
-/* Always takes its line, empty or not, so the cell doesn't grow when it loads. */
-.hero-subrole {
-  display: block;
-  height: 13px;
-  margin-top: 2px;
-  color: var(--muted);
-  font: 600 13px/1 var(--label-font);
-  letter-spacing: 0.04em;
 }
 
 .hero-change {

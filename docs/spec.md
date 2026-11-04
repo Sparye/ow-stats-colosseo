@@ -2,7 +2,7 @@
 
 *Hero stats, head to head.*
 
-Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**, **Subrole**, **Season**, **Namecard**, **Title**, **Endorsement**, **Profile Changed**, **Stat Row**, **Fair Stat**, **Volume Stat**, **Best Stat**, **Sample Size**, **Leader**, **Score**, **Hero Pool**, **Shared Hero**, **Private Profile**) are defined in [`GLOSSARY.md`](../GLOSSARY.md) and used here exactly as defined.
+Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**, **Season**, **Namecard**, **Title**, **Endorsement**, **Profile Changed**, **Stat Row**, **Fair Stat**, **Volume Stat**, **Best Stat**, **Sample Size**, **Leader**, **Score**, **Hero Pool**, **Shared Hero**, **Private Profile**) are defined in [`GLOSSARY.md`](../GLOSSARY.md) and used here exactly as defined.
 
 ## Stack and hosting
 
@@ -20,13 +20,9 @@ Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**,
 - One **Hero Scope** (a single hero or All Heroes), one **Gamemode** (Quick Play / Competitive) and one **Platform** (PC / Console), shared by every Player.
 - Defaults: Hero Scope **All Heroes**, Gamemode **Competitive**, Platform **PC**.
 - The hero picker lists every hero from `GET /heroes`, with portraits. It opens from the **hero cell**, the header-row cell beside the Player headers (between them with two Players, in the pinned label column with more):
-  - With a hero picked, the cell shows its portrait, its name, its **Subrole** under the name (see Hero details) and a **Change Hero** button.
+  - With a hero picked, the cell shows its portrait, its name and a **Change Hero** button.
   - With All Heroes, "All Heroes" sits in a portrait-sized box where the portrait would be, with a **Select Hero** button below. The cell keeps the same height either way, so the header row doesn't jump.
   - Picking a hero keeps the page scrolled where it was.
-
-### Hero details
-
-With a single hero as the Hero Scope, the hero cell adds the hero's **Subrole**, such as "Tactician", from `GET /heroes/{hero_key}`, on a line under the name. With All Heroes that request isn't made. The line keeps its space while the request loads, and stays empty if it fails, so the cell never changes height and there's no error.
 
 ### URL
 
@@ -55,7 +51,6 @@ Every BattleTag input offers **Recent Players** in a dropdown directly under it:
 
 - For each Player, fetch **one** `GET /players/{id}/stats?gamemode=&platform=` (no `hero` parameter). It returns labelled stats for every hero they've played plus `all-heroes`, at about 30 KB. Switching hero reads from this response without another request. Changing Gamemode or Platform triggers a new fetch.
 - Header data comes from `GET /players/{id}/summary`.
-- Hero details come from `GET /heroes/{hero_key}`, once per hero and kept for a day, like the hero list.
 - OverFast returns the same empty stats for a **Private Profile** and for a Player with no games at all. Only then, check `GET /players?name={Name-1234}`, whose result carries `is_public`. A Player who has stats but not for the chosen hero gets the "no games" message without this check.
 - On All Heroes, also fetch one `GET /players/{id}/stats/summary?gamemode=&platform=` per Player, for the Heroes section. It's about 5–10 KB. It's asked for as soon as the Heroes tab is on offer, because the tab's bar shows before it's opened, and not at all on a single hero. If it fails, only that Player's Hero Pool is missing: the Slot and its Stat Rows carry on.
 - Each Player loads, fails and retries on their own (one TanStack Query per Player per request). One slow or broken Slot never blocks the others.
@@ -196,7 +191,7 @@ Every error appears inside that Player's Slot. The rest of the Matchup keeps wor
   - Profile Changed's relative text
   - URL search-param parsing and its fallbacks
   - Hero Pools, Shared Heroes, their Leaders and the tally
-- A few component tests (React Testing Library) with OverFast responses faked: the 2-Player and 3+-Player layouts, a Private Profile in one Slot, Leader highlighting, Change / Remove, "+ Add player" focusing the new Slot, the hero Subrole, and the Heroes section.
+- A few component tests (React Testing Library) with OverFast responses faked: the 2-Player and 3+-Player layouts, a Private Profile in one Slot, Leader highlighting, Change / Remove, "+ Add player" focusing the new Slot, and the Heroes section.
 - No browser end-to-end tests in v1.
 
 ## Out of scope for v1

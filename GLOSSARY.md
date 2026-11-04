@@ -40,11 +40,6 @@ PC or Console.
 **Season**:
 The one Competitive season a Player's Competitive stats cover: the last season they played, which can differ between Players. Quick Play stats cover every season.
 
-### Heroes
-
-**Subrole**:
-A narrower kind of hero within its role, such as Stalwart among tanks.
-
 ### Player flair
 
 **Namecard**:

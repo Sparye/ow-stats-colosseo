@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildComparison, leadCounts, type HeroStats } from './comparison'
+import { buildComparison, leadCounts, statValue, type HeroStats } from './comparison'
 
 /** Builds OverFast-shaped hero stats from `{ category: { key: value } }`. */
 function heroStats(categories: Record<string, Record<string, number>>): HeroStats {
@@ -161,5 +161,64 @@ describe('leadCounts', () => {
       heroStats({ best: { eliminations_most_in_game: 30, healing_done_most_in_game: 7000, damage_done_most_in_game: 6000 } }),
     ])
     expect(leadCounts(c.best, 3)).toEqual([2, 2, 0])
+  })
+})
+
+describe('buildComparison: Rank-Adjusted Win Rate', () => {
+  const gold = heroStats({ game: { win_percentage: 55 }, average: { healing_done_avg_per_10_min: 1 } })
+  const grandmaster = heroStats({ game: { win_percentage: 58 }, average: { healing_done_avg_per_10_min: 2 } })
+
+  it('leads the win rate row on the raw value without them', () => {
+    expect(row(buildComparison([gold, grandmaster]), 'win_percentage').leaders).toEqual([1])
+  })
+
+  it('leads the win rate row on the given values, keeping the raw values on show', () => {
+    const c = buildComparison([gold, grandmaster], { winRateLeadBy: [4.2, 1.1] })
+    expect(row(c, 'win_percentage')).toMatchObject({ values: [55, 58], leaders: [0] })
+  })
+
+  it('leaves every other row alone', () => {
+    const c = buildComparison([gold, grandmaster], { winRateLeadBy: [4.2, 1.1] })
+    expect(row(c, 'healing_done_avg_per_10_min').leaders).toEqual([1])
+  })
+
+  it('counts the win rate row by the adjusted rule in the Score', () => {
+    const c = buildComparison([gold, grandmaster], { winRateLeadBy: [4.2, 1.1] })
+    expect(c.scores.fair).toEqual([
+      { leads: 1, of: 2 },
+      { leads: 1, of: 2 },
+    ])
+  })
+
+  it('leaves a Player without an adjusted value out of the comparison', () => {
+    const c = buildComparison([grandmaster, gold, heroStats({ game: { win_percentage: 90 } })], {
+      winRateLeadBy: [1.1, 4.2, null],
+    })
+    expect(row(c, 'win_percentage').leaders).toEqual([1])
+  })
+
+  it('has no Leader on that row with fewer than 2 adjusted values', () => {
+    const c = buildComparison([gold, grandmaster], { winRateLeadBy: [4.2, null] })
+    expect(row(c, 'win_percentage').leaders).toEqual([])
+    expect(c.scores.fair).toEqual([
+      { leads: 0, of: 1 },
+      { leads: 1, of: 1 },
+    ])
+  })
+
+  it('treats tied adjusted values like any other tie', () => {
+    const c = buildComparison([gold, grandmaster], { winRateLeadBy: [4.2, 4.2] })
+    expect(row(c, 'win_percentage').leaders).toEqual([])
+  })
+})
+
+describe('statValue', () => {
+  it("reads one stat from a Player's stats", () => {
+    expect(statValue(heroStats({ game: { games_played: 7, win_percentage: 48 } }), 'win_percentage')).toBe(48)
+  })
+
+  it('is null when the Player has no stats or not that stat', () => {
+    expect(statValue(heroStats({ game: { games_played: 7 } }), 'win_percentage')).toBeNull()
+    expect(statValue(null, 'win_percentage')).toBeNull()
   })
 })

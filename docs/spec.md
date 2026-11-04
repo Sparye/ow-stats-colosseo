@@ -2,7 +2,7 @@
 
 *Hero stats, head to head.*
 
-Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**, **Hitpoints**, **Ability**, **Subrole**, **Season**, **Stat Row**, **Fair Stat**, **Volume Stat**, **Best Stat**, **Sample Size**, **Leader**, **Score**, **Private Profile**) are defined in [`GLOSSARY.md`](../GLOSSARY.md) and used here exactly as defined.
+Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**, **Hitpoints**, **Ability**, **Subrole**, **Season**, **Stat Row**, **Fair Stat**, **Volume Stat**, **Best Stat**, **Sample Size**, **Leader**, **Score**, **Private Profile**, **Benchmark**, **Rank Tier**, **Global Win Rate**, **Rank-Adjusted Win Rate**) are defined in [`GLOSSARY.md`](../GLOSSARY.md) and used here exactly as defined.
 
 ## Stack and hosting
 
@@ -44,6 +44,8 @@ With a single hero as the Hero Scope, the hero cell adds what `GET /heroes/{hero
 - `players` lists BattleTags in Slot order, with `#` replaced by `-`.
 - `hero` is a hero key or `all-heroes`.
 - `stats` is `volume` or `best` when the table is showing those; it's left out for Fair Stats, where every Matchup starts.
+- `benchmark=on` shows the Benchmark; `tier` is the Rank Tier picked for it (a division from `bronze` to `grandmaster`, or `all`), left out while it follows the Players; `region` is `europe`, `americas` or `asia`, left out for All regions.
+- `adjusted=on` is the Rank-adjusted toggle.
 - Invalid or unknown values fall back to the defaults. Anything after the 5th Player is dropped.
 
 ## Adding a Player
@@ -65,6 +67,7 @@ Every BattleTag input offers **Recent Players** in a dropdown directly under it:
 - Hero details come from `GET /heroes/{hero_key}`, once per hero and kept for a day, like the hero list.
 - OverFast returns the same empty stats for a **Private Profile** and for a Player with no games at all. Only then, check `GET /players?name={Name-1234}`, whose result carries `is_public`. A Player who has stats but not for the chosen hero gets the "no games" message without this check.
 - Each Player loads, fails and retries on their own (one TanStack Query per Player per request). One slow or broken Slot never blocks the others.
+- The Benchmark and Rank-Adjusted Win Rates come from `GET /heroes/stats?platform=&gamemode=&region=&competitive_division=`, once per region per Rank Tier. Each response covers every hero, so switching hero reads from it without another request. OverFast caches them for an hour, so we do too. In Quick Play, OverFast ignores `competitive_division` and has no ban rates, so neither is asked for or shown. A failure here only shows in the Benchmark's own column, and never touches a Slot.
 - Stat labels come from the API's `label` field. Values are formatted by kind:
   - durations (in seconds) → `h:mm:ss` / `m:ss`
   - percentages and accuracy → `%`
@@ -85,18 +88,38 @@ Stats are sorted by their API key, with a short list of manual fixes for any her
 
 **Lower-Is-Better Stats** are any key containing `deaths`. Every other stat is higher-is-better.
 
+The `win_percentage` Stat Row is where the Benchmark and Rank-Adjusted Win Rates show. It's a Fair Stat, so neither shows a value on the Volume or Best tabs.
+
 ## Leader and Score
 
 - On each Stat Row, only Players who have a value are compared. A row needs **at least 2** values to have a Leader.
 - Every Player tied for the best value is a Leader, **unless every compared Player is tied**, in which case there is none.
 - A Player without the stat shows "—".
 - **Score** = Stat Rows the Player leads ÷ Stat Rows that have a Leader, in the section on show (Fair, Volume or Best), shown as "Leads 9 of 14". It changes with the section tab. A shared lead counts for each tied Player. Sample Size rows never count.
+- With the **Rank-adjusted** toggle on, the win rate row's Leader goes by Rank-Adjusted Win Rate instead of the win rate. The Score still counts Fair Stat rows led, with this row counted by that rule. The Benchmark is never a Leader and has no Score.
+
+## Benchmark
+
+An optional extra column after the Slots that answers "how do we compare to the field?". It isn't a Player: it doesn't count toward the 5-Player maximum, has no BattleTag form, is never a Leader and is never in a Score.
+
+- The **Benchmark** toggle in the controls row turns it on and off. It only works with a single hero. On All Heroes the toggle is disabled and says "Pick a hero", and a link with `benchmark=on` shows no column. Phones hide a toggle that can't be used, to keep the stuck band short.
+- Its header has a neutral gray strip instead of a Slot Color, and a title such as "Avg Diamond Ana" ("Avg Ana" with no Rank Tier).
+- It fills the `win_percentage` Stat Row with the Global Win Rate, to one decimal. Every other row shows "—". Its header adds the hero's **pick rate** and **ban rate**, which only the Benchmark has. There's no ban rate in Quick Play.
+- **Rank tier picker** (Competitive only): All ranks, or Bronze to Grandmaster. It defaults to the highest Rank Tier among the Matchup's Players for the hero's role, waiting until every Player has loaded so it doesn't jump around, and falls back to All ranks if none has one. Once a tier is picked it stays until changed, whoever is in the Matchup. Picking the tier it would default to goes back to following the Players.
+- **Region picker**: "All regions" by default, which fetches the three regions in parallel and counts each equally, or one region. OverFast doesn't say how many games each region has, so it can't be weighted. Hovering says what's being averaged. The same region applies to Rank-Adjusted Win Rates.
+- If a region doesn't load, the others are averaged and hovering says which one is missing. If none load, the header shows "Couldn't load" with a Retry link, and the win rate row shows "—".
+
+### Rank-Adjusted Win Rate
+
+In Competitive with a single hero, each Player's win rate has their Rank-Adjusted Win Rate under it, such as "+4.2 vs Gold": the difference from the Global Win Rate at their own Rank Tier for the hero's role, to one decimal, so two values that look the same are tied. Hovering shows the Global Win Rate it was measured against. A Player without a rank for that role has no Rank-Adjusted Win Rate.
+
+The **Rank-adjusted** toggle in the controls row makes it decide the win rate row's Leader, so a Gold Player on 55% can beat a Grandmaster on 58%. The raw win rate stays on show. With it on, Players without a Rank-Adjusted Win Rate are left out of that row's comparison and show "No rank". It works in Competitive with a single hero; otherwise it's disabled and says "Competitive only" or "Pick a hero", and Leaders go by the raw win rate.
 
 ## Layout
 
 Top to bottom:
 
-1. Top bar: site name, then a row with the Gamemode / Platform toggles on the left and "+ Add player" at the right end.
+1. Top bar: site name, then a row with the Gamemode / Platform toggles and the Benchmark / Rank-adjusted toggles on the left and "+ Add player" at the right end.
 2. **Player headers**: a thin strip in the Slot Color, then avatar, BattleTag, Change button, Score, and Competitive rank. In Competitive, the rank line also shows the **Season** the stats come from (`competitive.{platform}.season` in the summary). Blizzard only publishes Competitive stats for a Player's last season played, and OverFast keeps no history ([overfast-api#30](https://github.com/TeKrop/overfast-api/issues/30)), so combined multi-season Competitive stats aren't possible. The label makes it visible when Players' seasons differ. Quick Play shows no season. The rank shown is for the hero's role on the chosen Platform; for All Heroes it's the highest role rank. Namecard, title and endorsement aren't shown. Headers aren't mirrored in the two-Player layout; only the values are.
 3. **Section tabs**: Fair Stats, Volume Stats, Best Stats, then the **Sample Size** rows.
 4. One of **Fair Stats** (the default), **Volume Stats** or **Best Stats**, each with the hero's own stats first, then general ones, under a one-line note saying what kind of stats they are. Only one section shows at a time; the others are a click away (see Section tabs).
@@ -117,14 +140,15 @@ Layout depends on how many Players there are:
 
 - **2 Players**: Player 1's value on the left, the stat label in the middle, Player 2's value on the right.
 - **3–5 Players**: the stat label on the left, then one value column per Slot. With 4–5 Players the label column narrows (about 10rem instead of 15rem) and long labels wrap onto two lines.
-- **Narrow screens with 3+ Players**: the label column stays pinned and the value columns scroll sideways inside the table. A soft shadow on an edge shows there are columns hidden on that side. The header row scrolls sideways with the Stat Rows, whichever one is swiped, even while it's stuck to the top. The page itself never scrolls sideways. The 2-Player layout fits a phone screen as is.
+- **The Benchmark**, when on, is the last column in both layouts: after Player 2's values with 2 Players, and after the last Slot with more.
+- **Narrow screens with 3+ Players**: the label column stays pinned and the value columns scroll sideways inside the table. A soft shadow on an edge shows there are columns hidden on that side. The header row scrolls sideways with the Stat Rows, whichever one is swiped, even while it's stuck to the top. The page itself never scrolls sideways. The 2-Player layout fits a phone screen as is; with the Benchmark on it scrolls sideways too, with the label scrolling along since it sits between the Players.
 
 ### Width
 
 Like an inline database in Notion, the text stays compact and only the table grows:
 
 - The top bar and footer sit in a **centered column about 900px wide**, the width of the 2-Player table. On narrower screens they fill the screen with 16px gutters.
-- The **table** breaks out of that column, growing evenly on both sides so it stays centered. It's only as wide as its columns need (the label column plus about 13rem per Slot), never stretched to fill the screen, and at most the screen width minus gutters. Past that it scrolls sideways as above. Five Players fit a 1280px-wide screen without scrolling.
+- The **table** breaks out of that column, growing evenly on both sides so it stays centered. It's only as wide as its columns need (the label column plus about 13rem per Slot, plus 10rem for the Benchmark), never stretched to fill the screen, and at most the screen width minus gutters. Past that it scrolls sideways as above. Five Players fit a 1280px-wide screen without scrolling, even with the Benchmark on.
 - The width snaps when a Slot is added or removed, with no animation.
 - **Player headers never widen their column.** The BattleTag input shrinks, Add / Change / Remove stay visible, and long BattleTags wrap.
 
@@ -175,7 +199,8 @@ Every error appears inside that Player's Slot. The rest of the Matchup keeps wor
   - Leader selection (ties, all tied, missing values, fewer than 2 values)
   - Score
   - URL search-param parsing and its fallbacks
-- A few component tests (React Testing Library) with OverFast responses faked: the 2-Player and 3+-Player layouts, a Private Profile in one Slot, Leader highlighting, Change / Remove, and "+ Add player" focusing the new Slot.
+  - Benchmark averaging across regions, Rank Tier choice, and Rank-Adjusted Win Rate and its Leaders
+- A few component tests (React Testing Library) with OverFast responses faked: the 2-Player and 3+-Player layouts, a Private Profile in one Slot, Leader highlighting, Change / Remove, "+ Add player" focusing the new Slot, the Benchmark in both layouts and the Rank-adjusted toggle.
 - No browser end-to-end tests in v1.
 
 ## Out of scope for v1

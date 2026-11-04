@@ -37,4 +37,5 @@ Each feature file has an H1 title, one paragraph on what the user sees, and then
 - [Recent Players](./recent-players.md): suggesting BattleTags that loaded before, and never ones that didn't.
 - [Filters](./filters.md): Gamemode, Platform and Hero Scope.
 - [Compare stats](./compare-stats.md): Leaders, Score, the stat sections, Season labels and layout by Player count.
+- [Benchmark and Rank-Adjusted Win Rate](./benchmark.md): comparing Players with the field, and the win rate row's Rank-adjusted Leader.
 - [Player states](./player-states.md): not found, no games and could-not-load messages in a Slot.

@@ -9,7 +9,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react'
-import { leadCounts, type Comparison, type StatRow } from '../domain/comparison'
+import { WIN_RATE, leadCounts, type Comparison, type StatRow } from '../domain/comparison'
 import { STAT_SECTIONS, type StatSection } from '../domain/matchupSearch'
 import { SLOT_COLORS } from '../domain/slotColors'
 import { formatStat } from './format'
@@ -30,7 +30,19 @@ type Props = {
   /** Which section's Stat Rows show under the Sample Size. */
   section: StatSection
   onSectionChange: (section: StatSection) => void
+  /** The Benchmark's column after the Slots, when it's on. */
+  benchmark?: {
+    header: ReactNode
+    /** What the win rate row shows for it. */
+    winRate: number | null
+    /** Where that win rate comes from, for hovering. */
+    winRateNote: string
+  }
+  /** What goes under each Slot's win rate. */
+  winRateNotes?: Array<WinRateNote | null>
 }
+
+export type WinRateNote = { text: string; hover: string }
 
 /**
  * Two Players: values either side of the stat label. Three or more: the label
@@ -41,10 +53,19 @@ type Props = {
  * sideways in step with them instead. The section tabs ride in the same band,
  * so switching between Fair, Volume and Best Stats is always one click away.
  */
-export function StatTable({ comparison, headers, heroPicker, heroName, section, onSectionChange }: Props) {
+export function StatTable({
+  comparison,
+  headers,
+  heroPicker,
+  heroName,
+  section,
+  onSectionChange,
+  benchmark,
+  winRateNotes,
+}: Props) {
   const slotCount = headers.length
   const mirrored = slotCount === 2
-  const tableClass = `stat-table ${mirrored ? 'mirrored' : 'columns'}`
+  const tableClass = `stat-table ${mirrored ? 'mirrored' : 'columns'}${benchmark ? ' has-benchmark' : ''}`
   const band = useRef<HTMLDivElement>(null)
   const headerScroller = useRef<HTMLDivElement>(null)
   const scroller = useRef<HTMLDivElement>(null)
@@ -77,20 +98,29 @@ export function StatTable({ comparison, headers, heroPicker, heroName, section, 
   const renderRow = (row: StatRow) => {
     const values = row.values.map((value, slot) => {
       const leads = row.leaders.includes(slot)
+      const note = row.key === WIN_RATE ? winRateNotes?.[slot] : null
+      const shown = value === null ? '—' : formatStat(row.key, value)
       return (
         <div
           key={slot}
           role="cell"
           className={`value${leads ? ' leader' : ''}`}
           style={{ '--slot-color': SLOT_COLORS[slot] } as CSSProperties}
-          aria-label={leads ? `${value === null ? '—' : formatStat(row.key, value)}, leads` : undefined}
+          aria-label={leads ? `${note ? `${shown}, ${note.text}` : shown}, leads` : undefined}
         >
           {leads && (
             <span className="marker" aria-hidden="true">
               ▲
             </span>
           )}
-          {value === null ? <span className="muted">—</span> : formatStat(row.key, value)}
+          <span className="value-text">
+            {value === null ? <span className="muted">—</span> : shown}
+            {note && (
+              <span className="win-rate-note" title={note.hover}>
+                {note.text}
+              </span>
+            )}
+          </span>
         </div>
       )
     })
@@ -99,9 +129,12 @@ export function StatTable({ comparison, headers, heroPicker, heroName, section, 
         {row.label}
       </div>
     )
+    const benchmarkCell = benchmark && (
+      <BenchmarkCell key="benchmark" statKey={row.key} winRate={benchmark.winRate} hover={benchmark.winRateNote} />
+    )
     return (
       <div key={row.key} role="row" className="row">
-        {mirrored ? [values[0], label, values[1]] : [label, ...values]}
+        {mirrored ? [values[0], label, values[1], benchmarkCell] : [label, ...values, benchmarkCell]}
       </div>
     )
   }
@@ -114,6 +147,7 @@ export function StatTable({ comparison, headers, heroPicker, heroName, section, 
       aria-label={`${heroName} stats`}
       className="table-area"
       data-slots={slotCount}
+      data-benchmark={benchmark ? '' : undefined}
       style={{ '--slots': slotCount } as CSSProperties}
     >
       <div className="header-band" ref={band} data-stuck={stuck || undefined}>
@@ -121,7 +155,9 @@ export function StatTable({ comparison, headers, heroPicker, heroName, section, 
           <div className="table-scroll header-scroll" ref={headerScroller}>
             <div className={tableClass}>
               <div role="row" className="row header-row">
-                {mirrored ? [headers[0], heroCell, headers[1]] : [heroCell, ...headers]}
+                {mirrored
+                  ? [headers[0], heroCell, headers[1], benchmark?.header]
+                  : [heroCell, ...headers, benchmark?.header]}
               </div>
             </div>
           </div>
@@ -153,6 +189,16 @@ export function StatTable({ comparison, headers, heroPicker, heroName, section, 
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+/** The Benchmark only has something to show on the win rate row. */
+function BenchmarkCell({ statKey, winRate, hover }: { statKey: string; winRate: number | null; hover: string }) {
+  const shown = statKey === WIN_RATE && winRate !== null
+  return (
+    <div role="cell" className="value benchmark" title={shown ? hover : undefined}>
+      {shown ? formatStat(statKey, winRate) : '—'}
     </div>
   )
 }

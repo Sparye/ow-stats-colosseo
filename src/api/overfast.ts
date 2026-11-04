@@ -1,3 +1,4 @@
+import type { GlobalHeroStat, RankTier, Region } from '../domain/benchmark'
 import type { HeroStats } from '../domain/comparison'
 import type { Gamemode, Platform } from '../domain/matchupSearch'
 
@@ -84,3 +85,9 @@ export type Ability = { name: string; description: string; icon: string }
 export type HeroDetails = { subrole: string | null; hitpoints: Hitpoints | null; abilities: Ability[] }
 
 export const getHeroDetails = (heroKey: string) => get<HeroDetails>(`/heroes/${encodeURIComponent(heroKey)}`)
+
+/** One hero's rates across everyone playing, for one Platform, Gamemode and region; one row per hero. */
+export const getGlobalHeroStats = (platform: Platform, gamemode: Gamemode, region: Region, tier: RankTier | null) =>
+  get<GlobalHeroStat[]>(
+    `/heroes/stats?platform=${platform}&gamemode=${gamemode}&region=${region}${tier ? `&competitive_division=${tier}` : ''}`,
+  )

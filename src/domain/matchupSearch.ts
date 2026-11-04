@@ -1,4 +1,5 @@
 import { isSamePlayer, parseBattleTag, type BattleTag } from './battleTag'
+import { RANK_TIERS, REGIONS, type RankTier, type Region } from './benchmark'
 
 export const GAMEMODES = ['competitive', 'quickplay'] as const
 export const PLATFORMS = ['pc', 'console'] as const
@@ -20,6 +21,14 @@ export type MatchupSearch = {
   gamemode: Gamemode
   platform: Platform
   stats: StatSection
+  /** Whether the Benchmark column shows. */
+  benchmark: boolean
+  /** The Rank Tier picked for the Benchmark; `null` until one is, so it follows the Players' highest. */
+  benchmarkTier: RankTier | 'all' | null
+  /** Where global hero stats come from, for the Benchmark and Rank-Adjusted Win Rates alike. */
+  region: Region | 'all'
+  /** Whether the win rate row's Leader goes by Rank-Adjusted Win Rate. */
+  rankAdjusted: boolean
 }
 
 const HERO_KEY = /^[a-z0-9-]+$/
@@ -33,6 +42,10 @@ export function parseMatchupSearch(query: string): MatchupSearch {
     gamemode: oneOf(GAMEMODES, params.get('gamemode')) ?? 'competitive',
     platform: oneOf(PLATFORMS, params.get('platform')) ?? 'pc',
     stats: oneOf(STAT_SECTIONS, params.get('stats')) ?? 'fair',
+    benchmark: params.get('benchmark') === 'on',
+    benchmarkTier: oneOf<RankTier | 'all'>([...RANK_TIERS, 'all'], params.get('tier')) ?? null,
+    region: oneOf(REGIONS, params.get('region')) ?? 'all',
+    rankAdjusted: params.get('adjusted') === 'on',
   }
 }
 
@@ -42,6 +55,10 @@ export function stringifyMatchupSearch(search: MatchupSearch): string {
   entries.push(['hero', search.hero], ['gamemode', search.gamemode], ['platform', search.platform])
   // Fair Stats is where every Matchup starts, so most links don't need it.
   if (search.stats !== 'fair') entries.push(['stats', search.stats])
+  if (search.benchmark) entries.push(['benchmark', 'on'])
+  if (search.benchmarkTier) entries.push(['tier', search.benchmarkTier])
+  if (search.region !== 'all') entries.push(['region', search.region])
+  if (search.rankAdjusted) entries.push(['adjusted', 'on'])
   // Only escape what would break the query string, so shared links stay readable.
   const escape = (value: string) => value.replace(/[%&#+=?\s]/g, encodeURIComponent)
   return '?' + entries.map(([k, v]) => `${k}=${escape(v)}`).join('&')

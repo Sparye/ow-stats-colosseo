@@ -5,7 +5,7 @@ description: Drive Overwatch Stats Colosseo (the React web app in this repo) in 
 
 # Verify Overwatch Stats Colosseo
 
-The app is a static React SPA (`src/`) that calls the public OverFast API (`https://overfast-api.tekrop.fr`) straight from the browser. There's no backend, database, or login. Everything a user does lives in the URL (`?players=&hero=&gamemode=&platform=&stats=`) plus one `localStorage` key, `recentPlayers`. Words like Matchup, Slot, Leader and Score are defined in `GLOSSARY.md`.
+The app is a static React SPA (`src/`) that calls the public OverFast API (`https://overfast-api.tekrop.fr`) straight from the browser. There's no backend, database, or login. Everything a user does lives in the URL (`?players=&hero=&gamemode=&platform=&stats=&benchmark=&tier=&region=&adjusted=`) plus one `localStorage` key, `recentPlayers`. Words like Matchup, Slot, Leader and Score are defined in `GLOSSARY.md`.
 
 Every step goes through `scripts/control.sh`, run from anywhere in the repo:
 
@@ -79,11 +79,13 @@ Stable handles, as the snapshot shows them:
 - **BattleTag input:** `combobox "BATTLETAG"`, with `aria-expanded` saying whether its Recent Players dropdown is open.
 - **Recent Players dropdown:** `listbox "Recent Players"` containing `option "<Name>#<digits>"`. It opens when the input gets the cursor, narrows as you type, and picking an option places that Player straight away. It's a popover in the top layer, so it shows in screenshots.
 - **Top bar:** `radio "COMPETITIVE"`, `radio "QUICK PLAY"`, `radio "PC"`, `radio "CONSOLE"`, `button "+ ADD PLAYER"`. The hero button is named after the current hero (`button "ANA"`, `button "ALL HEROES"`).
+- **Top bar switches:** `switch "BENCHMARK"` and `switch "RANK-ADJUSTED"`, with `checked` when on. Disabled, their name carries the reason (`"BENCHMARK PICK A HERO"`).
+- **Benchmark:** `columnheader "Benchmark"`, with `combobox "Rank tier"` and `combobox "Region"`.
 - **Hero picker:** a popover whose buttons are named after heroes.
 - **Stat table:** `table "<Hero> stats"`, with `rowgroup "Sample Size"` and one section rowgroup, `"Fair Stats"`, `"Volume Stats"` or `"Best Stats"`, whichever is showing.
 - **Section tabs:** `tablist "Stats"` containing `tab "Fair Stats"`, `tab "Volume Stats"`, `tab "Best Stats"`, with `selected` on the one showing. Pressing `f`/`v`/`b` needs `$S orca keypress --key v` with focus outside an input; `location.search` gains `stats=volume`/`stats=best`.
 - **Stat Rows:** a `rowheader` for the label. A Leader's cell is named `"<value>, leads"`.
-- **CSS hooks for `wait`/`js`:** `.score` (one per Slot that has a Score), `.message` (Slot errors and statuses), `.add-player`.
+- **CSS hooks for `wait`/`js`:** `.score` (one per Slot that has a Score), `.message` (Slot errors and statuses), `.add-player`, `.win-rate-note` (a Rank-Adjusted Win Rate or "No rank"), `.benchmark-title`, `.benchmark-rates`.
 
 Test Players with real data are listed in `docs/test-players.md`. For a BattleTag that's guaranteed not to exist, use `Ghost#9999`.
 

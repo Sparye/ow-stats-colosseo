@@ -75,3 +75,12 @@ export async function isPublicProfile(playerId: string): Promise<boolean> {
   )
   return results.find((r) => r.player_id === playerId)?.is_public ?? true
 }
+
+export type Hitpoints = { health: number; armor: number; shields: number; total: number }
+
+export type Ability = { name: string; description: string; icon: string }
+
+/** The parts of `GET /heroes/{hero_key}` the hero cell shows. OverFast has no Hitpoints for some heroes. */
+export type HeroDetails = { subrole: string | null; hitpoints: Hitpoints | null; abilities: Ability[] }
+
+export const getHeroDetails = (heroKey: string) => get<HeroDetails>(`/heroes/${encodeURIComponent(heroKey)}`)

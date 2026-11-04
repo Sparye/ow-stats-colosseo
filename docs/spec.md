@@ -2,7 +2,7 @@
 
 *Hero stats, head to head.*
 
-Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**, **Season**, **Stat Row**, **Fair Stat**, **Volume Stat**, **Best Stat**, **Sample Size**, **Leader**, **Score**, **Private Profile**) are defined in [`GLOSSARY.md`](../GLOSSARY.md) and used here exactly as defined.
+Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**, **Hitpoints**, **Ability**, **Subrole**, **Season**, **Stat Row**, **Fair Stat**, **Volume Stat**, **Best Stat**, **Sample Size**, **Leader**, **Score**, **Private Profile**) are defined in [`GLOSSARY.md`](../GLOSSARY.md) and used here exactly as defined.
 
 ## Stack and hosting
 
@@ -20,9 +20,20 @@ Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**,
 - One **Hero Scope** (a single hero or All Heroes), one **Gamemode** (Quick Play / Competitive) and one **Platform** (PC / Console), shared by every Player.
 - Defaults: Hero Scope **All Heroes**, Gamemode **Competitive**, Platform **PC**.
 - The hero picker lists every hero from `GET /heroes`, with portraits. It opens from the **hero cell**, the header-row cell beside the Player headers (between them with two Players, in the pinned label column with more):
-  - With a hero picked, the cell shows its portrait, its name and a **Change Hero** button.
-  - With All Heroes, "All Heroes" sits in a portrait-sized box where the portrait would be, with a **Select Hero** button below. The cell keeps the same height either way, so the header row doesn't jump.
+  - With a hero picked, the cell shows its portrait, its name, its **Hitpoints** and **Abilities** (see Hero details) and a **Change Hero** button.
+  - With All Heroes, "All Heroes" sits in a box filling the space those would take, with a **Select Hero** button below. The cell keeps the same height either way, so the header row doesn't jump.
   - Picking a hero keeps the page scrolled where it was.
+
+### Hero details
+
+With a single hero as the Hero Scope, the hero cell adds what `GET /heroes/{hero_key}` says about them. With All Heroes that request isn't made.
+
+- **Hitpoints**: one thin bar, split by share of the total into health (light gray), armor (orange-yellow) and shields (blue), each with its number. A kind the hero doesn't have gets no segment. A hero with no Hitpoints in OverFast gets no bar.
+- **Abilities**: a row of icons on dark chips. Hovering, focusing or tapping one opens its name and description just below it. Moving off it, tabbing away, Escape, or tapping elsewhere closes it.
+- **Subrole**, such as "Stalwart", under the name. It's left out in the narrow cell.
+- The cell has two arrangements, chosen by its own width. Wide (2 or 3 Players on a big screen): the portrait beside the name, subrole and Hitpoints, with one row of Abilities below. Narrow (4–5 Players, or phones): a smaller portrait beside the name, with Hitpoints and up to two rows of Abilities below. The height doesn't depend on the hero, even with the most Abilities (9).
+- These are extras. While the request is loading, or if it fails, the cell shows just the portrait, the name and Change Hero, at the same height, with no error.
+- The hero's background art isn't used. Tried faintly behind the cell and behind the whole band, it muddied the clean light look and hid the light-gray health segment.
 
 ### URL
 
@@ -51,6 +62,7 @@ Every BattleTag input offers **Recent Players** in a dropdown directly under it:
 
 - For each Player, fetch **one** `GET /players/{id}/stats?gamemode=&platform=` (no `hero` parameter). It returns labelled stats for every hero they've played plus `all-heroes`, at about 30 KB. Switching hero reads from this response without another request. Changing Gamemode or Platform triggers a new fetch.
 - Header data comes from `GET /players/{id}/summary`.
+- Hero details come from `GET /heroes/{hero_key}`, once per hero and kept for a day, like the hero list.
 - OverFast returns the same empty stats for a **Private Profile** and for a Player with no games at all. Only then, check `GET /players?name={Name-1234}`, whose result carries `is_public`. A Player who has stats but not for the chosen hero gets the "no games" message without this check.
 - Each Player loads, fails and retries on their own (one TanStack Query per Player per request). One slow or broken Slot never blocks the others.
 - Stat labels come from the API's `label` field. Values are formatted by kind:

@@ -8,6 +8,9 @@
   --brand: #f99e1a;
   --focus: #f99e1a;
   --danger: #b42318;
+  --hp-health: #dfe2e7;
+  --hp-armor: #f5b335;
+  --hp-shields: #62bdf0;
 
   --label-font: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
   --body-font: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -499,9 +502,10 @@ main {
 }
 
 .hero-cell {
+  /* The cell's width decides how its contents are arranged; see the query below. */
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: flex-end;
   gap: 6px;
   padding: 12px;
@@ -510,32 +514,188 @@ main {
   text-align: center;
 }
 
-.hero-cell {
+/* A fixed height, whatever fills it, so the header row doesn't jump between
+   All Heroes, a hero still loading and a hero with its flair. Wide enough for
+   the portrait beside the name and Hitpoints, and one row of nine Abilities. */
+.hero-main {
   --portrait: 56px;
+  --ability: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: calc(var(--portrait) + 6px + var(--ability));
 }
 
 .hero-portrait {
   width: var(--portrait);
   height: var(--portrait);
+  flex: none;
   border-radius: 4px;
 }
 
-/* All Heroes has no portrait, so its name takes the portrait's place, and the
-   gap the name line would fill keeps the cell as tall as with a hero picked. */
 .hero-portrait.all-heroes {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* One word per line, and wider than a phone's small portrait if "Heroes" needs it. */
-  width: min-content;
-  min-width: var(--portrait);
-  padding-inline: 4px;
-  /* The hero name line (18px at 1.1) and its gap. */
-  margin-bottom: calc(18px * 1.1 + 6px);
+  width: 100%;
+  height: 100%;
   background: var(--panel);
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.05;
+  font-size: 15px;
+}
+
+.hero-flair {
+  display: grid;
+  grid-template-columns: var(--portrait) minmax(0, 1fr);
+  grid-template-rows: var(--portrait) var(--ability);
+  gap: 6px 8px;
+  width: 100%;
+  text-align: start;
+}
+
+.hero-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.hero-subrole {
+  color: var(--muted);
+  font: 600 13px/1 var(--label-font);
+  letter-spacing: 0.04em;
+}
+
+.hitpoints {
+  display: flex;
+  gap: 1px;
+  height: 16px;
+  margin-top: auto;
+  border-radius: 2px;
+  overflow: hidden;
+  color: var(--text);
+  font: 600 13px/16px var(--label-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.hitpoints span {
+  /* Each segment's share comes from its flex-grow, but its number always fits. */
+  flex-basis: 0;
+  min-width: min-content;
+  padding-inline: 3px;
+  text-align: center;
+}
+
+.hitpoints .health {
+  background: var(--hp-health);
+}
+
+.hitpoints .armor {
+  background: var(--hp-armor);
+}
+
+.hitpoints .shields {
+  background: var(--hp-shields);
+}
+
+.hero-abilities {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The icons are white on nothing, so they need the dark chip. */
+.hero-abilities button {
+  display: block;
+  width: var(--ability);
+  height: var(--ability);
+  border: 0;
+  border-radius: 3px;
+  background: var(--text);
+  padding: 2px;
+}
+
+/* Only where there's a mouse: on touch the tint would stay after the tap. */
+@media (hover: hover) {
+  .hero-abilities button:hover {
+    background: color-mix(in srgb, var(--brand) 55%, var(--text));
+  }
+}
+
+.hero-abilities img {
+  width: 100%;
+  height: 100%;
+}
+
+/* A popover, so the UA's centered placement is undone here and AbilityIcons sets
+   top and left from the icon. It also undoes the hero cell's inherited text styles. */
+.ability-tip {
+  inset: auto;
+  margin: 0;
+  width: min(16rem, calc(100vw - 16px));
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  padding: 8px 10px;
+  color: var(--text);
+  font: 400 14px/1.35 var(--body-font);
+  text-align: start;
+  text-transform: none;
+  box-shadow: 0 8px 24px rgb(22 24 29 / 0.16);
+}
+
+.ability-tip strong {
+  display: block;
+  margin-bottom: 2px;
+  font: 700 16px/1.2 var(--label-font);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Narrow hero cell (4-5 Players, or phones): a smaller portrait beside the name,
+   with Hitpoints and up to two rows of Abilities below. The portrait and font
+   leave "Widowmaker", the widest name, just enough room in a phone's 8rem cell. */
+@container (max-width: 11rem) {
+  .hero-main {
+    --portrait: 36px;
+    --ability: 20px;
+    height: calc(var(--portrait) + 4px + 16px + 4px + 2 * var(--ability) + 2px);
+  }
+
+  .hero-flair {
+    grid-template-rows: var(--portrait) 16px auto;
+    gap: 4px 6px;
+  }
+
+  .hero-facts {
+    display: contents;
+  }
+
+  .hero-name {
+    align-self: center;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+
+  .hero-subrole {
+    display: none;
+  }
+
+  .hitpoints {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin-top: 0;
+  }
+
+  .hero-abilities {
+    grid-row: 3;
+  }
 }
 
 .hero-change {
@@ -799,7 +959,7 @@ main {
   }
 
   .hero-cell {
-    --portrait: 40px;
+    padding: 8px;
   }
 
   .section-tabs {

@@ -40,6 +40,19 @@ PC or Console.
 **Season**:
 The one Competitive season a Player's Competitive stats cover: the last season they played, which can differ between Players. Quick Play stats cover every season.
 
+### Heroes
+
+**Hitpoints**:
+How much damage a hero can take, made up of health, armor and shields. A hero's own, not a Player's stat.
+_Avoid_: HP, life
+
+**Ability**:
+One of a hero's skills, with an icon, a name and a description.
+_Avoid_: Skill, power
+
+**Subrole**:
+A narrower kind of hero within its role, such as Stalwart among tanks.
+
 ### Stats
 
 **Stat Row**:

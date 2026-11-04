@@ -40,6 +40,22 @@ PC or Console.
 **Season**:
 The one Competitive season a Player's Competitive stats cover: the last season they played, which can differ between Players. Quick Play stats cover every season.
 
+### Player flair
+
+**Namecard**:
+The banner image a Player picked in Overwatch, shown faintly behind their Player header.
+_Avoid_: Banner, background
+
+**Title**:
+The short text a Player picked in Overwatch to show with their name, such as "Data Broker".
+
+**Endorsement**:
+A Player's endorsement level in Overwatch, from 1 to 5.
+
+**Last Updated**:
+When a Player's profile last changed on Blizzard's side. It isn't when OverFast last fetched that profile.
+_Avoid_: Last refreshed, last fetched
+
 ### Stats
 
 **Stat Row**:

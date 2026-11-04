@@ -52,6 +52,12 @@ export type PlayerSummary = {
   username: string
   avatar: string | null
   competitive: Partial<Record<Platform, CompetitiveSummary | null>> | null
+  namecard?: string | null
+  title?: string | null
+  /** Level 0 means OverFast found no endorsement information. */
+  endorsement?: { level: number; frame?: string | null } | null
+  /** Unix seconds: when the profile last changed on Blizzard's side, not when OverFast last fetched it. */
+  last_updated_at?: number | null
 }
 
 /** Stats for every hero the Player has played, keyed by hero key (plus `all-heroes`). */

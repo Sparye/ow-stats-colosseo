@@ -501,7 +501,7 @@ describe('Player header flair', () => {
       const slot = await header(name)
       await within(slot).findByText(/Leads/)
       expect(slot.querySelector('.namecard, .flair')).not.toBeInTheDocument()
-      expect(within(slot).queryByText(/Updated/)).not.toBeInTheDocument()
+      expect(within(slot).queryByText(/Profile changed/)).not.toBeInTheDocument()
     }
   })
 
@@ -517,19 +517,19 @@ describe('Player header flair', () => {
     expect(screen.getByRole('columnheader', { name: 'Anna#1111' }).querySelector('.namecard')).not.toBeInTheDocument()
   })
 
-  it('says when the profile was updated, with the exact time on hover', async () => {
+  it('says when the profile changed, with the exact time on hover', async () => {
     const now = new Date('2026-11-04T12:00:00Z')
     vi.useFakeTimers({ toFake: ['Date'], now })
-    const updatedAt = new Date(now.getTime() - 3 * 60 * 1000)
+    const changedAt = new Date(now.getTime() - 3 * 60 * 1000)
     fakeOverfast({
-      'Anna-1111': { summary: { ...flair, last_updated_at: updatedAt.getTime() / 1000 }, stats: anaStats(9000, 6) },
+      'Anna-1111': { summary: { ...flair, last_updated_at: changedAt.getTime() / 1000 }, stats: anaStats(9000, 6) },
       'Bob-2222': { stats: anaStats(8000, 4) },
     })
     renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
 
-    const updated = await within(await header('Anna#1111')).findByText('Updated 3 min ago')
-    expect(updated).toHaveAttribute('dateTime', updatedAt.toISOString())
-    expect(updated).toHaveAttribute('title', updatedAt.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }))
+    const changed = await within(await header('Anna#1111')).findByText('Profile changed 3 min ago')
+    expect(changed).toHaveAttribute('dateTime', changedAt.toISOString())
+    expect(changed).toHaveAttribute('title', changedAt.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }))
   })
 
   it('ticks forward each minute without fetching again', async () => {
@@ -542,19 +542,19 @@ describe('Player header flair', () => {
     renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
 
     const anna = await header('Anna#1111')
-    await within(anna).findByText('Updated 3 min ago')
+    await within(anna).findByText('Profile changed 3 min ago')
     await screen.findByRole('rowheader', { name: 'Healing Done - Avg per 10 Min' })
     const fetches = vi.mocked(fetch).mock.calls.length
 
     act(() => {
       vi.advanceTimersByTime(60 * 1000)
     })
-    expect(within(anna).getByText('Updated 4 min ago')).toBeInTheDocument()
+    expect(within(anna).getByText('Profile changed 4 min ago')).toBeInTheDocument()
 
     act(() => {
       vi.advanceTimersByTime(2 * 60 * 60 * 1000)
     })
-    expect(within(anna).getByText('Updated 2 hr ago')).toBeInTheDocument()
+    expect(within(anna).getByText('Profile changed 2 hr ago')).toBeInTheDocument()
     expect(vi.mocked(fetch).mock.calls.length).toBe(fetches)
   })
 })

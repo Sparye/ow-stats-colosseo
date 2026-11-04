@@ -52,9 +52,9 @@ The short text a Player picked in Overwatch to show with their name, such as "Da
 **Endorsement**:
 A Player's endorsement level in Overwatch, from 1 to 5.
 
-**Last Updated**:
+**Profile Changed**:
 When a Player's profile last changed on Blizzard's side. It isn't when OverFast last fetched that profile.
-_Avoid_: Last refreshed, last fetched
+_Avoid_: Last updated, last refreshed, last fetched
 
 ### Stats
 

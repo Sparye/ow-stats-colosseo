@@ -2,7 +2,7 @@
 
 *Hero stats, head to head.*
 
-Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**, **Season**, **Namecard**, **Title**, **Endorsement**, **Last Updated**, **Stat Row**, **Fair Stat**, **Volume Stat**, **Best Stat**, **Sample Size**, **Leader**, **Score**, **Private Profile**) are defined in [`GLOSSARY.md`](../GLOSSARY.md) and used here exactly as defined.
+Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**, **Season**, **Namecard**, **Title**, **Endorsement**, **Profile Changed**, **Stat Row**, **Fair Stat**, **Volume Stat**, **Best Stat**, **Sample Size**, **Leader**, **Score**, **Private Profile**) are defined in [`GLOSSARY.md`](../GLOSSARY.md) and used here exactly as defined.
 
 ## Stack and hosting
 
@@ -85,7 +85,7 @@ Stats are sorted by their API key, with a short list of manual fixes for any her
 Top to bottom:
 
 1. Top bar: site name, then a row with the Gamemode / Platform toggles on the left and "+ Add player" at the right end.
-2. **Player headers**: a thin strip in the Slot Color, then avatar, BattleTag, Title and Endorsement, Competitive rank, Change button, Score and Last Updated (see Player flair and Last Updated). In Competitive, the rank line also shows the **Season** the stats come from (`competitive.{platform}.season` in the summary). Blizzard only publishes Competitive stats for a Player's last season played, and OverFast keeps no history ([overfast-api#30](https://github.com/TeKrop/overfast-api/issues/30)), so combined multi-season Competitive stats aren't possible. The label makes it visible when Players' seasons differ. Quick Play shows no season. The rank shown is for the hero's role on the chosen Platform; for All Heroes it's the highest role rank. Headers aren't mirrored in the two-Player layout; only the values are.
+2. **Player headers**: a thin strip in the Slot Color, then avatar, BattleTag, Title and Endorsement, Competitive rank, Change button, Score and Profile Changed (see Player flair and Profile Changed). In Competitive, the rank line also shows the **Season** the stats come from (`competitive.{platform}.season` in the summary). Blizzard only publishes Competitive stats for a Player's last season played, and OverFast keeps no history ([overfast-api#30](https://github.com/TeKrop/overfast-api/issues/30)), so combined multi-season Competitive stats aren't possible. The label makes it visible when Players' seasons differ. Quick Play shows no season. The rank shown is for the hero's role on the chosen Platform; for All Heroes it's the highest role rank. Headers aren't mirrored in the two-Player layout; only the values are.
 3. **Section tabs**: Fair Stats, Volume Stats, Best Stats, then the **Sample Size** rows.
 4. One of **Fair Stats** (the default), **Volume Stats** or **Best Stats**, each with the hero's own stats first, then general ones, under a one-line note saying what kind of stats they are. Only one section shows at a time; the others are a click away (see Section tabs).
 5. Footer: "Not affiliated with or endorsed by Blizzard Entertainment. Data from OverFast API."
@@ -98,11 +98,11 @@ These all come from the summary the header already loads, so they add no request
 - **Title**: under the BattleTag, wrapping if it's long.
 - **Endorsement**: the level's icon and number, beside the Title, with "Endorsement level N" on hover. OverFast's level 0 means it found no information, so that shows nothing.
 
-### Last Updated
+### Profile Changed
 
-Each header says when the Player's profile last changed on Blizzard's side, from `last_updated_at` (Unix seconds) in the summary: "Updated 3 min ago", then hours, days, months and years, always rounded down. Hovering shows the exact local date and time. The text moves on by itself once a minute without fetching anything. It sits to the right of the Score, or below it if the Slot is narrow, and it's left out when OverFast doesn't have the time.
+Each header says when the Player's profile last changed on Blizzard's side, from `last_updated_at` (Unix seconds) in the summary: "Profile changed 3 min ago", then `hr`, `days`, `mo` and `yr`, always rounded down. Hovering shows the exact local date and time. The text moves on by itself once a minute without fetching anything. It sits to the right of the Score, or below it where the Slot is too narrow, wrapping if it has to, and it's left out when OverFast doesn't have the time.
 
-This isn't when OverFast last fetched the Player, so a Player who hasn't played in months reads "Updated 6 months ago" even if their stats were fetched a moment ago.
+This isn't when OverFast last fetched the Player, so a Player who hasn't played in months reads "Profile changed 6 mo ago" even if their stats were fetched a moment ago.
 
 ### Section tabs
 
@@ -176,7 +176,7 @@ Every error appears inside that Player's Slot. The rest of the Matchup keeps wor
   - Fair / Volume / Best sorting, plus Lower-Is-Better detection
   - Leader selection (ties, all tied, missing values, fewer than 2 values)
   - Score
-  - Last Updated's relative text
+  - Profile Changed's relative text
   - URL search-param parsing and its fallbacks
 - A few component tests (React Testing Library) with OverFast responses faked: the 2-Player and 3+-Player layouts, a Private Profile in one Slot, Leader highlighting, Change / Remove, and "+ Add player" focusing the new Slot.
 - No browser end-to-end tests in v1.

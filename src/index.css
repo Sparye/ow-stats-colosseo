@@ -688,7 +688,7 @@ main {
   flex-basis: 100%;
 }
 
-.last-updated {
+.profile-changed {
   color: var(--muted);
   font: 500 13px/1.2 var(--label-font);
 }

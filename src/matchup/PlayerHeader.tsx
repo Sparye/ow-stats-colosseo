@@ -2,8 +2,8 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type FormEvent,
 import type { Hero } from '../api/overfast'
 import { parseBattleTag } from '../domain/battleTag'
 import type { Score } from '../domain/comparison'
-import { updatedAgo } from '../domain/lastUpdated'
 import type { Gamemode, Platform } from '../domain/matchupSearch'
+import { profileChangedAgo } from '../domain/profileChanged'
 import { BattleTagInput } from './BattleTagInput'
 import { rankFor, rankLabel } from './format'
 import type { SlotState } from './useSlots'
@@ -156,7 +156,7 @@ export function PlayerHeader({
             </button>
           </span>
         )}
-        {summary?.last_updated_at && <LastUpdated seconds={summary.last_updated_at} />}
+        {summary?.last_updated_at && <ProfileChanged seconds={summary.last_updated_at} />}
       </div>
     </SlotFrame>
   )
@@ -165,21 +165,21 @@ export function PlayerHeader({
 const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
 /** Counts up on its own each minute; the time itself only changes when the summary is fetched again. */
-function LastUpdated({ seconds }: { seconds: number }) {
+function ProfileChanged({ seconds }: { seconds: number }) {
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60 * 1000)
     return () => clearInterval(timer)
   }, [])
 
-  const updatedAt = new Date(seconds * 1000)
+  const changedAt = new Date(seconds * 1000)
   return (
     <time
-      className="last-updated"
-      dateTime={updatedAt.toISOString()}
-      title={updatedAt.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+      className="profile-changed"
+      dateTime={changedAt.toISOString()}
+      title={changedAt.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
     >
-      {updatedAgo(updatedAt, now)}
+      {profileChangedAgo(changedAt, now)}
     </time>
   )
 }

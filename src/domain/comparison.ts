@@ -80,7 +80,7 @@ function heroSpecificFirst(categories: HeroStats): HeroStats {
   ]
 }
 
-function findLeaders(values: Array<number | null>, lowerIsBetter: boolean): number[] {
+export function findLeaders(values: Array<number | null>, lowerIsBetter: boolean): number[] {
   const compared = values.flatMap((value, slot) => (value === null ? [] : [{ value, slot }]))
   if (compared.length < 2) return []
   const best = lowerIsBetter

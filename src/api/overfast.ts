@@ -1,3 +1,4 @@
+import type { GlobalHeroStat, RankTier, Region } from '../domain/benchmark'
 import type { HeroStats } from '../domain/comparison'
 import type { Gamemode, Platform } from '../domain/matchupSearch'
 
@@ -75,3 +76,9 @@ export async function isPublicProfile(playerId: string): Promise<boolean> {
   )
   return results.find((r) => r.player_id === playerId)?.is_public ?? true
 }
+
+/** One hero's rates across everyone playing, for one Platform, Gamemode and region; one row per hero. */
+export const getGlobalHeroStats = (platform: Platform, gamemode: Gamemode, region: Region, tier: RankTier | null) =>
+  get<GlobalHeroStat[]>(
+    `/heroes/stats?platform=${platform}&gamemode=${gamemode}&region=${region}${tier ? `&competitive_division=${tier}` : ''}`,
+  )

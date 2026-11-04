@@ -1,6 +1,7 @@
 import { QueryClient, queryOptions } from '@tanstack/react-query'
+import type { RankTier, Region } from '../domain/benchmark'
 import type { Gamemode, Platform } from '../domain/matchupSearch'
-import { OverfastError, getHeroes, getPlayerStats, getPlayerSummary, isPublicProfile } from './overfast'
+import { OverfastError, getGlobalHeroStats, getHeroes, getPlayerStats, getPlayerSummary, isPublicProfile } from './overfast'
 
 export function createQueryClient() {
   return new QueryClient({
@@ -31,3 +32,11 @@ export const playerStatsQuery = (playerId: string, gamemode: Gamemode, platform:
 
 export const playerPrivacyQuery = (playerId: string) =>
   queryOptions({ queryKey: ['player', playerId, 'public'], queryFn: () => isPublicProfile(playerId) })
+
+export const globalHeroStatsQuery = (platform: Platform, gamemode: Gamemode, region: Region, tier: RankTier | null) =>
+  queryOptions({
+    // OverFast caches these for an hour.
+    staleTime: 60 * 60 * 1000,
+    queryKey: ['heroStats', platform, gamemode, region, tier],
+    queryFn: () => getGlobalHeroStats(platform, gamemode, region, tier),
+  })

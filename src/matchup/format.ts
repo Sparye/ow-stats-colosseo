@@ -1,4 +1,5 @@
 import type { Hero, PlayerSummary, Rank } from '../api/overfast'
+import { REGIONS, type RankTier, type Region } from '../domain/benchmark'
 import type { Platform } from '../domain/matchupSearch'
 
 const number = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 })
@@ -33,3 +34,22 @@ export function rankFor(summary: PlayerSummary, platform: Platform, hero: Hero |
 }
 
 export const rankLabel = (rank: Rank) => `${rank.division[0].toUpperCase()}${rank.division.slice(1)} ${rank.tier}`
+
+const capitalized = (word: string) => `${word[0].toUpperCase()}${word.slice(1)}`
+
+export const tierLabel = (tier: RankTier) => capitalized(tier)
+
+export const regionLabel = (region: Region) => capitalized(region)
+
+/** "+4.2", or "−3.8" with a real minus sign. */
+export const formatDifference = (difference: number) =>
+  `${difference < 0 ? '−' : '+'}${number.format(Math.abs(difference))}`
+
+/** Where global hero stats on show come from, for hovering; `missing` lists the regions that didn't answer. */
+export function regionsNote(region: Region | 'all', missing: Region[]): string {
+  if (region !== 'all') return `${regionLabel(region)} only`
+  const answered = REGIONS.filter((r) => !missing.includes(r)).map(regionLabel)
+  const list = `${answered.slice(0, -1).join(', ')}${answered.length > 1 ? ' and ' : ''}${answered.at(-1)}`
+  const average = `Average of ${list}, each counted equally`
+  return missing.length === 0 ? average : `${average}. ${missing.map(regionLabel).join(' and ')} didn't load.`
+}

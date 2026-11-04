@@ -4,12 +4,15 @@ import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 
 import { heroesQuery } from '../api/queries'
 import { isSamePlayer, parseBattleTag } from '../domain/battleTag'
 import { buildComparison } from '../domain/comparison'
-import { MAX_PLAYERS, type MatchupSearch } from '../domain/matchupSearch'
+import { ALL_HEROES, MAX_PLAYERS, type MatchupSearch } from '../domain/matchupSearch'
 import { SLOT_COLORS } from '../domain/slotColors'
+import { BenchmarkHeader } from './BenchmarkHeader'
+import { regionsNote } from './format'
 import { HeroPicker } from './HeroPicker'
 import { EmptySlotHeader, PlayerHeader } from './PlayerHeader'
 import { StatTable } from './StatTable'
-import { Toggle } from './Toggle'
+import { Switch, Toggle } from './Toggle'
+import { useGlobalComparison } from './useGlobalComparison'
 import { useRecentPlayers } from './useRecentPlayers'
 import { useSlots } from './useSlots'
 
@@ -36,12 +39,13 @@ export function MatchupPage() {
   /** Recent Players a Slot can take: Players in other Slots would only be turned away. */
   const suggestionsFor = (index: number) =>
     recentPlayers.filter((id) => !search.players.some((p, i) => i !== index && p.toLowerCase() === id.toLowerCase()))
-  const comparison = buildComparison(
-    Array.from({ length: slotCount }, (_, i) => {
-      const slot = slots[i]
-      return slot?.status === 'ready' ? slot.heroStats : null
-    }),
-  )
+  const slotStats = Array.from({ length: slotCount }, (_, i) => {
+    const slot = slots[i]
+    return slot?.status === 'ready' ? slot.heroStats : null
+  })
+
+  const globalComparison = useGlobalComparison(search, hero, slots, slotStats)
+  const comparison = buildComparison(slotStats, { winRateLeadBy: globalComparison.winRateLeadBy })
 
   /** Adds a Player to an empty Slot, or swaps the Player in a filled one. */
   const placePlayer = (index: number, input: string): string | null => {
@@ -66,6 +70,27 @@ export function MatchupPage() {
     setWantedSlots(Math.max(2, slotCount - 1))
     setAddedSlot(null)
     if (index < search.players.length) setSearch({ players: search.players.filter((_, i) => i !== index) })
+  }
+
+  // Not while the heroes are still loading, or the toggles would flash the wrong reason.
+  const noHero = search.hero === ALL_HEROES || (!!heroes && !hero)
+  const onBenchmark = globalComparison.benchmark
+  const benchmark = onBenchmark && {
+    header: (
+      <BenchmarkHeader
+        key="benchmark"
+        heroName={heroName}
+        tier={onBenchmark.tier}
+        hasTiers={search.gamemode === 'competitive'}
+        // Picking the tier it would default to anyway leaves it following the Players.
+        onTierChange={(tier) => setSearch({ benchmarkTier: tier === (onBenchmark.defaultTier ?? 'all') ? null : tier })}
+        region={search.region}
+        onRegionChange={(region) => setSearch({ region })}
+        stats={onBenchmark.stats}
+      />
+    ),
+    winRate: onBenchmark.stats.status === 'ready' ? (onBenchmark.stats.stats?.winrate ?? null) : null,
+    winRateNote: regionsNote(search.region, onBenchmark.stats.status === 'ready' ? onBenchmark.stats.missing : []),
   }
 
   const headers = Array.from({ length: slotCount }, (_, i) => {
@@ -126,6 +151,18 @@ export function MatchupPage() {
             ]}
             onChange={(platform) => setSearch({ platform })}
           />
+          <Switch
+            label="Benchmark"
+            on={search.benchmark}
+            onChange={(benchmark) => setSearch({ benchmark })}
+            disabledReason={noHero ? 'Pick a hero' : undefined}
+          />
+          <Switch
+            label="Rank-adjusted"
+            on={search.rankAdjusted}
+            onChange={(rankAdjusted) => setSearch({ rankAdjusted })}
+            disabledReason={noHero ? 'Pick a hero' : search.gamemode !== 'competitive' ? 'Competitive only' : undefined}
+          />
           {slotCount < MAX_PLAYERS && (
             <button type="button" className="add-player" onClick={addSlot}>
               + Add player
@@ -142,6 +179,8 @@ export function MatchupPage() {
           heroName={heroName}
           section={search.stats}
           onSectionChange={(stats) => setSearch({ stats })}
+          benchmark={benchmark || undefined}
+          winRateNotes={globalComparison.winRateNotes}
         />
       </main>
 

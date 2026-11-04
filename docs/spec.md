@@ -2,7 +2,7 @@
 
 *Hero stats, head to head.*
 
-Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**, **Hitpoints**, **Ability**, **Subrole**, **Season**, **Stat Row**, **Fair Stat**, **Volume Stat**, **Best Stat**, **Sample Size**, **Leader**, **Score**, **Private Profile**, **Benchmark**, **Rank Tier**, **Global Win Rate**, **Rank-Adjusted Win Rate**) are defined in [`GLOSSARY.md`](../GLOSSARY.md) and used here exactly as defined.
+Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**, **Hitpoints**, **Ability**, **Subrole**, **Season**, **Stat Row**, **Fair Stat**, **Volume Stat**, **Best Stat**, **Sample Size**, **Leader**, **Score**, **Hero Pool**, **Shared Hero**, **Private Profile**, **Benchmark**, **Rank Tier**, **Global Win Rate**, **Rank-Adjusted Win Rate**) are defined in [`GLOSSARY.md`](../GLOSSARY.md) and used here exactly as defined.
 
 ## Stack and hosting
 
@@ -43,7 +43,7 @@ With a single hero as the Hero Scope, the hero cell adds what `GET /heroes/{hero
 
 - `players` lists BattleTags in Slot order, with `#` replaced by `-`.
 - `hero` is a hero key or `all-heroes`.
-- `stats` is `volume` or `best` when the table is showing those; it's left out for Fair Stats, where every Matchup starts.
+- `stats` is `volume`, `best` or `heroes` when the table is showing those; it's left out for Fair Stats, where every Matchup starts. `heroes` on a single hero falls back to Fair Stats.
 - `benchmark=on` shows the Benchmark; `tier` is the Rank Tier picked for it (a division from `bronze` to `grandmaster`, or `all`), left out while it follows the Players; `region` is `europe`, `americas` or `asia`, left out for All regions.
 - `adjusted=on` is the Rank-adjusted toggle.
 - Invalid or unknown values fall back to the defaults. Anything after the 5th Player is dropped.
@@ -66,6 +66,7 @@ Every BattleTag input offers **Recent Players** in a dropdown directly under it:
 - Header data comes from `GET /players/{id}/summary`.
 - Hero details come from `GET /heroes/{hero_key}`, once per hero and kept for a day, like the hero list.
 - OverFast returns the same empty stats for a **Private Profile** and for a Player with no games at all. Only then, check `GET /players?name={Name-1234}`, whose result carries `is_public`. A Player who has stats but not for the chosen hero gets the "no games" message without this check.
+- On All Heroes, also fetch one `GET /players/{id}/stats/summary?gamemode=&platform=` per Player, for the Heroes section. It's about 5–10 KB. It's asked for as soon as the Heroes tab is on offer, because the tab's bar shows before it's opened, and not at all on a single hero. If it fails, only that Player's Hero Pool is missing: the Slot and its Stat Rows carry on.
 - Each Player loads, fails and retries on their own (one TanStack Query per Player per request). One slow or broken Slot never blocks the others.
 - The Benchmark and Rank-Adjusted Win Rates come from `GET /heroes/stats?platform=&gamemode=&region=&competitive_division=`, once per region per Rank Tier. Each response covers every hero, so switching hero reads from it without another request. OverFast caches them for an hour, so we do too. In Quick Play, OverFast ignores `competitive_division` and has no ban rates, so neither is asked for or shown. A failure here only shows in the Benchmark's own column, and never touches a Slot.
 - Stat labels come from the API's `label` field. Values are formatted by kind:
@@ -95,7 +96,7 @@ The `win_percentage` Stat Row is where the Benchmark and Rank-Adjusted Win Rates
 - On each Stat Row, only Players who have a value are compared. A row needs **at least 2** values to have a Leader.
 - Every Player tied for the best value is a Leader, **unless every compared Player is tied**, in which case there is none.
 - A Player without the stat shows "—".
-- **Score** = Stat Rows the Player leads ÷ Stat Rows that have a Leader, in the section on show (Fair, Volume or Best), shown as "Leads 9 of 14". It changes with the section tab. A shared lead counts for each tied Player. Sample Size rows never count.
+- **Score** = Stat Rows the Player leads ÷ Stat Rows that have a Leader, in the section on show (Fair, Volume or Best), shown as "Leads 9 of 14". It changes with the section tab. In the Heroes section it counts Shared Heroes instead (see Heroes section). A shared lead counts for each tied Player. Sample Size rows never count.
 - With the **Rank-adjusted** toggle on, the win rate row's Leader goes by Rank-Adjusted Win Rate instead of the win rate. The Score still counts Fair Stat rows led, with this row counted by that rule. The Benchmark is never a Leader and has no Score.
 
 ## Benchmark
@@ -121,18 +122,30 @@ Top to bottom:
 
 1. Top bar: site name, then a row with the Gamemode / Platform toggles and the Benchmark / Rank-adjusted toggles on the left and "+ Add player" at the right end.
 2. **Player headers**: a thin strip in the Slot Color, then avatar, BattleTag, Change button, Score, and Competitive rank. In Competitive, the rank line also shows the **Season** the stats come from (`competitive.{platform}.season` in the summary). Blizzard only publishes Competitive stats for a Player's last season played, and OverFast keeps no history ([overfast-api#30](https://github.com/TeKrop/overfast-api/issues/30)), so combined multi-season Competitive stats aren't possible. The label makes it visible when Players' seasons differ. Quick Play shows no season. The rank shown is for the hero's role on the chosen Platform; for All Heroes it's the highest role rank. Namecard, title and endorsement aren't shown. Headers aren't mirrored in the two-Player layout; only the values are.
-3. **Section tabs**: Fair Stats, Volume Stats, Best Stats, then the **Sample Size** rows.
-4. One of **Fair Stats** (the default), **Volume Stats** or **Best Stats**, each with the hero's own stats first, then general ones, under a one-line note saying what kind of stats they are. Only one section shows at a time; the others are a click away (see Section tabs).
+3. **Section tabs**: Fair Stats, Volume Stats, Best Stats, on All Heroes also Heroes, then the **Sample Size** rows.
+4. One of **Fair Stats** (the default), **Volume Stats** or **Best Stats**, each with the hero's own stats first, then general ones, under a one-line note saying what kind of stats they are, or the **Heroes** section. Only one section shows at a time; the others are a click away (see Section tabs).
 5. Footer: "Not affiliated with or endorsed by Blizzard Entertainment. Data from OverFast API."
 
 ### Section tabs
 
-Three slanted tabs under the header row switch which section's Stat Rows show, so no section is ever a long scroll away. Each tab carries a thin bar split in Slot Colors by how many of that section's Stat Rows each Player leads, so the Matchup's shape shows before opening it (a long Volume bar for the Player with the most playtime is the usual sight). The open tab's section is also what the Score in each Player header counts.
+Slanted tabs under the header row switch which section shows, so no section is ever a long scroll away. There are three on a single hero, and a fourth, Heroes, on All Heroes. Each tab carries a thin bar split in Slot Colors by how many of that section's rows each Player leads, so the Matchup's shape shows before opening it (a long Volume bar for the Player with the most playtime is the usual sight). The open tab's section is also what the Score in each Player header counts.
 
-- Click a tab, use ←/→/Home/End on a focused tab, or press **F**, **V** or **B** anywhere on the page except while typing or in a popover. Screens with a mouse show the key on each tab.
+- Click a tab, use ←/→/Home/End on a focused tab, or press **F**, **V**, **B** or **H** anywhere on the page except while typing or in a popover. **H** does nothing on a single hero. Screens with a mouse show the key on each tab.
 - Switching while scrolled into the Stat Rows brings the table back to the top of the Sample Size, right under the stuck band, so the new section starts from its first row.
 - The choice lives in the URL (`stats`), so a shared link opens on the same section.
 - On phones the tabs drop the word "Stats".
+
+### Heroes section
+
+Only on All Heroes, since it's about all of a Player's heroes at once. Picking a single hero anywhere, including from this section, moves to Fair Stats. The Sample Size rows stay above it.
+
+- **Hero Pool** row: under each Player, their heroes as small portraits, most time played first and sized by time played, with the top hero biggest. **Shared Heroes** have an orange ring and full color; the others are grayed down, so the overlap shows at a glance. The top 8 show, then a "+N more" button that shows the rest. Heroes with no games (a brief swap, which OverFast reports with a 0% win rate) aren't in a Hero Pool.
+- **Tally** row: "Leads on 7 of 11 shared heroes" per Player, out of the Shared Heroes that have a Leader. Those two numbers are also that Player's Score while this section is open.
+- One row per **Shared Hero**: its portrait and name, then each Player's win rate, KDA and games, or "—" for a Player who hasn't played it. The Leader is on win rate and looks like a Stat Row's Leader. Heroes that can have a Leader come first, then the most played across all Players.
+- Under **3 games** a Player's win rate is dimmed and can't lead or be compared, and a note above the rows says so. A hero needs two Players with 3 or more games to have a Leader, and if none does, the note says that as well.
+- Clicking a portrait, or anywhere on a Shared Hero's row, sets the Hero Scope to that hero and opens its Fair Stats, from the top of the table.
+- Two Players share the mirrored layout (the Hero Pool row runs outward from the label, biggest first), and 3–5 Players the column layout, so everything sits under its Player's header. Phones don't scroll the page sideways.
+- A Player still loading shows "Loading…", one whose request failed shows "Couldn't load this Hero Pool", and one with no games shows "—". They're left out of the comparison until they load.
 
 On screens at least 700px tall, the controls row and the header row (Player headers, hero cell and section tabs) stick to the top of the page as one band while the Stat Rows scroll under it. The site name scrolls away. The band has a solid background across the full screen width, and a soft shadow under it once Stat Rows are underneath. On shorter screens nothing sticks: the band would cover too many Stat Rows. Changing any control keeps the page scrolled where it was.
 
@@ -200,7 +213,8 @@ Every error appears inside that Player's Slot. The rest of the Matchup keeps wor
   - Score
   - URL search-param parsing and its fallbacks
   - Benchmark averaging across regions, Rank Tier choice, and Rank-Adjusted Win Rate and its Leaders
-- A few component tests (React Testing Library) with OverFast responses faked: the 2-Player and 3+-Player layouts, a Private Profile in one Slot, Leader highlighting, Change / Remove, "+ Add player" focusing the new Slot, the Benchmark in both layouts and the Rank-adjusted toggle.
+  - Hero Pools, Shared Heroes, their Leaders and the tally
+- A few component tests (React Testing Library) with OverFast responses faked: the 2-Player and 3+-Player layouts, a Private Profile in one Slot, Leader highlighting, Change / Remove, "+ Add player" focusing the new Slot, the Benchmark in both layouts, the Rank-adjusted toggle, and the Heroes section.
 - No browser end-to-end tests in v1.
 
 ## Out of scope for v1

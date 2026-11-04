@@ -7,6 +7,7 @@ Once Players load, each Stat Row shows every Player's value, and the best value 
 - `compare-leader`: the best value on a Stat Row is bold, tinted with its Slot Color, marked ▲, and its cell is named `"<value>, leads"`.
 - `compare-score`: each loaded Slot shows `Leads N of M`, where M is the same for every Slot.
 - `compare-sections`: Sample Size is always shown; tabs under the header row switch between Fair (default), Volume and Best Stats, by click, arrow keys on the tabs, or F/V/B anywhere. Each tab has a bar in Slot Colors showing who leads most of its rows. The section is kept in the URL as `stats`.
+- `compare-heroes`: on All Heroes only, a Heroes tab (or H) shows each Player's Hero Pool with Shared Heroes ringed, a "Leads on N of M shared heroes" tally, and one row per Shared Hero with a Leader on win rate. Clicking a portrait or row sets the Hero Scope to that hero. It's kept in the URL as `stats=heroes`, which falls back to Fair on a single hero.
 - `compare-season`: Competitive headers show `Season N`; Quick Play headers don't.
 - `compare-layout`: two Players are mirrored (value, label, value); three or more put the label first.
 
@@ -26,6 +27,7 @@ Preconditions:
 - **Season.** The snapshot shows `SEASON` in both headers.
 - **Section tabs.** Run `$S click 'tab "Volume Stats"'`, then `$S wait "location.search.includes('stats=volume')"`. The snapshot shows `rowgroup "Volume Stats"` and no `rowgroup "Fair Stats"`. Then scroll down (`$S js "scrollTo(0, 1400)"`), run `$S orca keypress --key b`, and check `location.search` has `stats=best` and the first Sample Size row sits just under the band (`document.querySelector('.table-scroll:not(.header-scroll)').getBoundingClientRect().top` equals `document.querySelector('.header-band').getBoundingClientRect().bottom`).
 - **Shared section.** Run `$S goto` with `&stats=best` added; `tab "Best Stats"` is selected on load.
+- **Heroes section.** Run `$S goto '/?players=JigglyPuff-11568,Alone2die-1446&gamemode=quickplay&platform=pc'`, wait for `.score`, then `$S orca keypress --key h` and `$S wait "document.querySelectorAll('.shared-hero').length > 0"`. `location.search` has `stats=heroes`, the `.tally` cells read `Leads on N of M shared heroes`, and `.shared-hero .leader` exists. Then `$S click 'button "Ana, '` and `$S wait "location.search.includes('hero=ana')"`: `stats=` is gone and there are three tabs. To check a phone, run `$S orca set device --name "iPhone 12"` after the `goto`, which resets it, and check `document.documentElement.scrollWidth === innerWidth`.
 - **Three Players.** Run `$S goto '/?players=Jingwen-11594,JigglyPuff-11568,Alone2die-1446&hero=ana&gamemode=competitive&platform=pc'` and then `$S wait "document.querySelectorAll('.score').length === 3"`. `className` now includes `columns`, and each row's first cell is its `rowheader`.
 - **Proof.** Take `$S snap compare-stats-three` and `$S shot compare-stats-three`.
 
@@ -34,4 +36,5 @@ Preconditions:
 - Values change as the Test Players play. Assert on Leaders, Score format and layout, not on numbers.
 - A Player missing a stat isn't compared on that row, so a row can have no Leader.
 - The Score counts the open section's Stat Rows, so it changes when you switch between Fair, Volume and Best.
+- Use Quick Play for the Heroes section: Competitive only covers one Season, so few Shared Heroes have enough games for a Leader.
 - A screenshot taken right after a scripted `scrollTo` can show the sticky band in a stale spot. Measure with `js`, or shoot again a moment later.

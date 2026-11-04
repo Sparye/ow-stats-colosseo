@@ -82,8 +82,8 @@ Stable handles, as the snapshot shows them:
 - **Top bar switches:** `switch "BENCHMARK"` and `switch "RANK-ADJUSTED"`, with `checked` when on. Disabled, their name carries the reason (`"BENCHMARK PICK A HERO"`).
 - **Benchmark:** `columnheader "Benchmark"`, with `combobox "Rank tier"` and `combobox "Region"`.
 - **Hero picker:** a popover whose buttons are named after heroes.
-- **Stat table:** `table "<Hero> stats"`, with `rowgroup "Sample Size"` and one section rowgroup, `"Fair Stats"`, `"Volume Stats"` or `"Best Stats"`, whichever is showing.
-- **Section tabs:** `tablist "Stats"` containing `tab "Fair Stats"`, `tab "Volume Stats"`, `tab "Best Stats"`, with `selected` on the one showing. Pressing `f`/`v`/`b` needs `$S orca keypress --key v` with focus outside an input; `location.search` gains `stats=volume`/`stats=best`.
+- **Stat table:** `table "<Hero> stats"`, with `rowgroup "Sample Size"` and one section rowgroup, `"Fair Stats"`, `"Volume Stats"`, `"Best Stats"` or `"Heroes"`, whichever is showing.
+- **Section tabs:** `tablist "Stats"` containing `tab "Fair Stats"`, `tab "Volume Stats"`, `tab "Best Stats"` and, on All Heroes, `tab "Heroes"`, with `selected` on the one showing. Pressing `f`/`v`/`b` needs `$S orca keypress --key v` with focus outside an input; `location.search` gains `stats=volume`/`stats=best`.
 - **Stat Rows:** a `rowheader` for the label. A Leader's cell is named `"<value>, leads"`.
 - **CSS hooks for `wait`/`js`:** `.score` (one per Slot that has a Score), `.message` (Slot errors and statuses), `.add-player`, `.win-rate-note` (a Rank-Adjusted Win Rate or "No rank"), `.benchmark-title`, `.benchmark-rates`.
 

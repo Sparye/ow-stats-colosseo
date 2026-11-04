@@ -7,6 +7,7 @@ import {
   getHeroDetails,
   getHeroes,
   getPlayerStats,
+  getPlayerStatsSummary,
   getPlayerSummary,
   isPublicProfile,
 } from './overfast'
@@ -54,4 +55,10 @@ export const globalHeroStatsQuery = (platform: Platform, gamemode: Gamemode, reg
     staleTime: 60 * 60 * 1000,
     queryKey: ['heroStats', platform, gamemode, region, tier],
     queryFn: () => getGlobalHeroStats(platform, gamemode, region, tier),
+  })
+
+export const playerStatsSummaryQuery = (playerId: string, gamemode: Gamemode, platform: Platform) =>
+  queryOptions({
+    queryKey: ['player', playerId, 'stats-summary', gamemode, platform],
+    queryFn: () => getPlayerStatsSummary(playerId, gamemode, platform),
   })

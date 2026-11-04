@@ -439,6 +439,128 @@ main {
   background: var(--panel);
 }
 
+/* Heroes section: the Hero Pools, then the Shared Heroes head to head */
+
+.pool-cell {
+  --pool-base: 30px;
+  --pool-range: 26px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: flex-start;
+  gap: 6px;
+  padding: 10px 14px;
+}
+
+/* Biggest against the label, like the mirrored values. */
+.mirrored .pool-cell:first-child {
+  flex-direction: row-reverse;
+}
+
+.pool-hero {
+  flex: none;
+  width: calc(var(--pool-base) + var(--pool-range) * var(--share));
+  height: calc(var(--pool-base) + var(--pool-range) * var(--share));
+  border: 0;
+  border-radius: 4px;
+  background: var(--panel);
+  padding: 0;
+}
+
+.pool-hero img,
+.pool-hero .no-portrait {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  filter: grayscale(0.7);
+  opacity: 0.75;
+}
+
+.pool-hero:hover img,
+.pool-hero.shared img {
+  filter: none;
+  opacity: 1;
+}
+
+.pool-hero.shared {
+  box-shadow: 0 0 0 2px var(--brand);
+}
+
+.pool-more {
+  flex: none;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.tally {
+  font: 600 15px/1.15 var(--label-font);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tally strong {
+  font-size: 20px;
+  color: color-mix(in srgb, var(--slot-color) 80%, var(--text));
+}
+
+.shared-hero {
+  cursor: pointer;
+}
+
+.shared-hero:hover .label,
+.shared-hero:hover .value:not(.leader) {
+  background: var(--panel);
+}
+
+.shared-hero-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: start;
+  text-transform: inherit;
+}
+
+.shared-hero-name img,
+.shared-hero-name .no-portrait {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
+  background: var(--panel);
+}
+
+.hero-numbers {
+  display: grid;
+  gap: 1px;
+  text-align: end;
+}
+
+.mirrored .value:last-child .hero-numbers {
+  text-align: start;
+}
+
+.hero-detail {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.hero-games::before {
+  content: '· ';
+}
+
+
+.hero-result.thin .hero-winrate {
+  color: var(--muted);
+}
+
 /* Header row, in a full-width band that sticks under the controls */
 
 .header-band {
@@ -475,7 +597,8 @@ main {
    padding leaves room for the slant at either end. */
 .section-tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: 8px;
   width: min(100%, var(--table-width));
   margin-inline: auto;
@@ -1092,6 +1215,34 @@ main {
 
   .hero-cell {
     padding: 8px;
+  }
+
+  .pool-cell {
+    --pool-base: 24px;
+    --pool-range: 18px;
+    gap: 5px;
+    padding: 8px;
+  }
+
+  .shared-hero-name {
+    gap: 5px;
+  }
+
+  .shared-hero-name img,
+  .shared-hero-name .no-portrait {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* One to a line, since a phone's column can't fit both. */
+  .hero-detail {
+    display: grid;
+    gap: 0;
+    font-size: 12px;
+  }
+
+  .hero-games::before {
+    content: none;
   }
 
   .section-tabs {

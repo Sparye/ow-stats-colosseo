@@ -91,3 +91,28 @@ export const getGlobalHeroStats = (platform: Platform, gamemode: Gamemode, regio
   get<GlobalHeroStat[]>(
     `/heroes/stats?platform=${platform}&gamemode=${gamemode}&region=${region}${tier ? `&competitive_division=${tier}` : ''}`,
   )
+
+/** One hero or role's totals, as `/players/{id}/stats/summary` returns them. */
+export type StatsSummaryEntry = {
+  games_played: number
+  games_won: number
+  games_lost: number
+  time_played: number
+  winrate: number
+  kda: number
+  total: Record<'eliminations' | 'assists' | 'deaths' | 'damage' | 'healing', number>
+  average: Record<'eliminations' | 'assists' | 'deaths' | 'damage' | 'healing', number>
+}
+
+/** A Player's totals overall, per role and per hero. Sections are `null` when OverFast has nothing for them. */
+export type PlayerStatsSummary = {
+  general: StatsSummaryEntry | null
+  roles: Partial<Record<Role, StatsSummaryEntry>> | null
+  /** Keyed by hero key. */
+  heroes: Record<string, StatsSummaryEntry> | null
+}
+
+export const getPlayerStatsSummary = (playerId: string, gamemode: Gamemode, platform: Platform) =>
+  get<PlayerStatsSummary>(
+    `/players/${encodeURIComponent(playerId)}/stats/summary?gamemode=${gamemode}&platform=${platform}`,
+  )

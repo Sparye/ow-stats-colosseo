@@ -1,5 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { parseMatchupSearch, stringifyMatchupSearch, type MatchupSearch } from './matchupSearch'
+import { parseMatchupSearch, sectionFor, sectionsFor, stringifyMatchupSearch, type MatchupSearch } from './matchupSearch'
+
+describe('sectionsFor', () => {
+  it('offers the Heroes section only on All Heroes', () => {
+    expect(sectionsFor('all-heroes')).toEqual(['fair', 'volume', 'best', 'heroes'])
+    expect(sectionsFor('ana')).toEqual(['fair', 'volume', 'best'])
+  })
+})
+
+describe('sectionFor', () => {
+  it('keeps a section the Hero Scope offers', () => {
+    expect(sectionFor('all-heroes', 'heroes')).toBe('heroes')
+    expect(sectionFor('ana', 'best')).toBe('best')
+  })
+
+  it('moves to Fair Stats when the Hero Scope does not offer the section', () => {
+    expect(sectionFor('ana', 'heroes')).toBe('fair')
+  })
+})
 
 const defaults = parseMatchupSearch('')
 
@@ -23,6 +41,15 @@ describe('parseMatchupSearch', () => {
   it('reads which stats a link opens on', () => {
     expect(parseMatchupSearch('?stats=best').stats).toBe('best')
     expect(parseMatchupSearch('?stats=everything').stats).toBe('fair')
+  })
+
+  it('opens the Heroes section on All Heroes', () => {
+    expect(parseMatchupSearch('?stats=heroes').stats).toBe('heroes')
+    expect(parseMatchupSearch('?hero=all-heroes&stats=heroes').stats).toBe('heroes')
+  })
+
+  it('falls back to Fair Stats when a link asks for the Heroes section on a single hero', () => {
+    expect(parseMatchupSearch('?hero=ana&stats=heroes').stats).toBe('fair')
   })
 
   it('falls back to All Heroes, Competitive and PC', () => {

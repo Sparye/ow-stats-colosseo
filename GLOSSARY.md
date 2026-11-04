@@ -94,12 +94,20 @@ _Avoid_: Relative win rate, win rate delta
 A stat where the smaller value wins, such as deaths. Every other stat is higher-is-better.
 
 **Leader**:
-A Player highlighted on a Stat Row for having the best value. Players tied for best are all Leaders, unless every compared Player is tied, in which case there are none. Only Players who have the stat are compared, and a Stat Row needs at least two of them to have a Leader.
+A Player highlighted on a Stat Row for having the best value, or on a Shared Hero for having the best win rate. Players tied for best are all Leaders, unless every compared Player is tied, in which case there are none. Only Players who have the stat are compared, and a Stat Row needs at least two of them to have a Leader. On a Shared Hero, only Players with at least 3 games on it are compared.
 _Avoid_: Winner, best player
 
 **Score**:
-How many Stat Rows a Player leads in the section on show (Fair, Volume or Best Stats), out of that section's Stat Rows that have a Leader. A shared lead counts for every Player tied for it.
+How many Stat Rows a Player leads in the section on show (Fair, Volume or Best Stats), out of that section's Stat Rows that have a Leader. In the Heroes section it counts Shared Heroes the same way. A shared lead counts for every Player tied for it.
 _Avoid_: Wins, points
+
+**Hero Pool**:
+The heroes a Player has played at least one game on, under the Matchup's Gamemode and Platform, most time played first. A hero they only swapped to for part of a game doesn't count.
+_Avoid_: Roster, hero list, mains
+
+**Shared Hero**:
+A hero in the Hero Pools of at least two Players in the Matchup.
+_Avoid_: Common hero, overlap
 
 **Private Profile**:
 A Player whose career stats are hidden by Blizzard, so they can't be compared. It doesn't stop the rest of the Matchup.

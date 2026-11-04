@@ -3,6 +3,7 @@ import type { Hero } from '../api/overfast'
 import { parseBattleTag } from '../domain/battleTag'
 import type { Score } from '../domain/comparison'
 import type { Gamemode, Platform } from '../domain/matchupSearch'
+import { profileChangedAgo } from '../domain/profileChanged'
 import { BattleTagInput } from './BattleTagInput'
 import { rankFor, rankLabel } from './format'
 import type { SlotState } from './useSlots'
@@ -46,6 +47,9 @@ export function PlayerHeader({
   const rank = summary && rankFor(summary, platform, hero)
   // Competitive stats only cover the last season played; Quick Play covers every season.
   const season = gamemode === 'competitive' ? summary?.competitive?.[platform]?.season : null
+  const title = summary?.title
+  // OverFast reports level 0 when it found no endorsement information.
+  const endorsement = summary?.endorsement?.level ? summary.endorsement : null
 
   if (changing) {
     return (
@@ -67,7 +71,7 @@ export function PlayerHeader({
   }
 
   return (
-    <SlotFrame label={display} color={color}>
+    <SlotFrame label={display} color={color} namecard={summary?.namecard}>
       <div className="identity">
         {summary?.avatar ? <img className="avatar" src={summary.avatar} alt="" /> : <div className="avatar" />}
         <div className="who">
@@ -82,6 +86,22 @@ export function PlayerHeader({
               display
             )}
           </div>
+          {(title || endorsement) && (
+            <div className="flair">
+              {title && <span className="player-title">{title}</span>}
+              {endorsement && (
+                <span
+                  className="endorsement"
+                  role="img"
+                  aria-label={`Endorsement level ${endorsement.level}`}
+                  title={`Endorsement level ${endorsement.level}`}
+                >
+                  {endorsement.frame && <img src={endorsement.frame} alt="" />}
+                  {endorsement.level}
+                </span>
+              )}
+            </div>
+          )}
           {/* Always there, even empty, so every Player's Score sits at the same height. */}
           <div className="rank">
             {rank && (
@@ -136,12 +156,33 @@ export function PlayerHeader({
             </button>
           </span>
         )}
+        {summary?.last_updated_at && <ProfileChanged seconds={summary.last_updated_at} />}
       </div>
     </SlotFrame>
   )
 }
 
 const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+
+/** Counts up on its own each minute; the time itself only changes when the summary is fetched again. */
+function ProfileChanged({ seconds }: { seconds: number }) {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60 * 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const changedAt = new Date(seconds * 1000)
+  return (
+    <time
+      className="profile-changed"
+      dateTime={changedAt.toISOString()}
+      title={changedAt.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+    >
+      {profileChangedAgo(changedAt, now)}
+    </time>
+  )
+}
 
 type EmptyProps = {
   color: string
@@ -160,7 +201,9 @@ export function EmptySlotHeader({ color, onPlace, onRemove, autoFocus, suggestio
   )
 }
 
-function SlotFrame({ label, color, children }: { label: string; color: string; children: ReactNode }) {
+type SlotFrameProps = { label: string; color: string; namecard?: string | null; children: ReactNode }
+
+function SlotFrame({ label, color, namecard, children }: SlotFrameProps) {
   return (
     <div
       className="player-header"
@@ -169,6 +212,7 @@ function SlotFrame({ label, color, children }: { label: string; color: string; c
       style={{ '--slot-color': color } as CSSProperties}
     >
       <div className="slot-strip" />
+      {namecard && <img className="namecard" src={namecard} alt="" />}
       {children}
     </div>
   )

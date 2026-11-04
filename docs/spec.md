@@ -2,7 +2,7 @@
 
 *Hero stats, head to head.*
 
-Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**, **Hitpoints**, **Ability**, **Subrole**, **Season**, **Stat Row**, **Fair Stat**, **Volume Stat**, **Best Stat**, **Sample Size**, **Leader**, **Score**, **Hero Pool**, **Shared Hero**, **Private Profile**, **Benchmark**, **Rank Tier**, **Global Win Rate**, **Rank-Adjusted Win Rate**) are defined in [`GLOSSARY.md`](../GLOSSARY.md) and used here exactly as defined.
+Domain terms (**Matchup**, **Player**, **Slot**, **Slot Color**, **Hero Scope**, **Hitpoints**, **Ability**, **Subrole**, **Season**, **Namecard**, **Title**, **Endorsement**, **Profile Changed**, **Stat Row**, **Fair Stat**, **Volume Stat**, **Best Stat**, **Sample Size**, **Leader**, **Score**, **Hero Pool**, **Shared Hero**, **Private Profile**, **Benchmark**, **Rank Tier**, **Global Win Rate**, **Rank-Adjusted Win Rate**) are defined in [`GLOSSARY.md`](../GLOSSARY.md) and used here exactly as defined.
 
 ## Stack and hosting
 
@@ -121,10 +121,24 @@ The **Rank-adjusted** toggle in the controls row makes it decide the win rate ro
 Top to bottom:
 
 1. Top bar: site name, then a row with the Gamemode / Platform toggles and the Benchmark / Rank-adjusted toggles on the left and "+ Add player" at the right end.
-2. **Player headers**: a thin strip in the Slot Color, then avatar, BattleTag, Change button, Score, and Competitive rank. In Competitive, the rank line also shows the **Season** the stats come from (`competitive.{platform}.season` in the summary). Blizzard only publishes Competitive stats for a Player's last season played, and OverFast keeps no history ([overfast-api#30](https://github.com/TeKrop/overfast-api/issues/30)), so combined multi-season Competitive stats aren't possible. The label makes it visible when Players' seasons differ. Quick Play shows no season. The rank shown is for the hero's role on the chosen Platform; for All Heroes it's the highest role rank. Namecard, title and endorsement aren't shown. Headers aren't mirrored in the two-Player layout; only the values are.
+2. **Player headers**: a thin strip in the Slot Color, then avatar, BattleTag, Title and Endorsement, Competitive rank, Change button, Score and Profile Changed (see Player flair and Profile Changed). In Competitive, the rank line also shows the **Season** the stats come from (`competitive.{platform}.season` in the summary). Blizzard only publishes Competitive stats for a Player's last season played, and OverFast keeps no history ([overfast-api#30](https://github.com/TeKrop/overfast-api/issues/30)), so combined multi-season Competitive stats aren't possible. The label makes it visible when Players' seasons differ. Quick Play shows no season. The rank shown is for the hero's role on the chosen Platform; for All Heroes it's the highest role rank. Headers aren't mirrored in the two-Player layout; only the values are.
 3. **Section tabs**: Fair Stats, Volume Stats, Best Stats, on All Heroes also Heroes, then the **Sample Size** rows.
 4. One of **Fair Stats** (the default), **Volume Stats** or **Best Stats**, each with the hero's own stats first, then general ones, under a one-line note saying what kind of stats they are, or the **Heroes** section. Only one section shows at a time; the others are a click away (see Section tabs).
 5. Footer: "Not affiliated with or endorsed by Blizzard Entertainment. Data from OverFast API."
+
+### Player flair
+
+These all come from the summary the header already loads, so they add no requests. Anything a Player doesn't have is left out, and nothing else moves: Scores still line up along the bottom of the header row.
+
+- **Namecard**: a faint background under the Slot Color strip, cropped from the left to keep the art on its right, and fading out towards the left. It's faint enough that the BattleTag, rank and Score stay readable on even an all-black Namecard. The Change form doesn't show it.
+- **Title**: under the BattleTag, wrapping if it's long.
+- **Endorsement**: the level's icon and number, beside the Title, with "Endorsement level N" on hover. OverFast's level 0 means it found no information, so that shows nothing.
+
+### Profile Changed
+
+Each header says when the Player's profile last changed on Blizzard's side, from `last_updated_at` (Unix seconds) in the summary: "Profile changed 3 min ago", then `hr`, `days`, `mo` and `yr`, always rounded down. Hovering shows the exact local date and time. The text moves on by itself once a minute without fetching anything. It sits to the right of the Score, or below it where the Slot is too narrow, wrapping if it has to, and it's left out when OverFast doesn't have the time.
+
+This isn't when OverFast last fetched the Player, so a Player who hasn't played in months reads "Profile changed 6 mo ago" even if their stats were fetched a moment ago.
 
 ### Section tabs
 
@@ -163,7 +177,7 @@ Like an inline database in Notion, the text stays compact and only the table gro
 - The top bar and footer sit in a **centered column about 900px wide**, the width of the 2-Player table. On narrower screens they fill the screen with 16px gutters.
 - The **table** breaks out of that column, growing evenly on both sides so it stays centered. It's only as wide as its columns need (the label column plus about 13rem per Slot, plus 10rem for the Benchmark), never stretched to fill the screen, and at most the screen width minus gutters. Past that it scrolls sideways as above. Five Players fit a 1280px-wide screen without scrolling, even with the Benchmark on.
 - The width snaps when a Slot is added or removed, with no animation.
-- **Player headers never widen their column.** The BattleTag input shrinks, Add / Change / Remove stay visible, and long BattleTags wrap.
+- **Player headers never widen their column.** The BattleTag input shrinks, Add / Change / Remove stay visible, and long BattleTags and Titles wrap.
 
 ## Highlighting
 
@@ -211,6 +225,7 @@ Every error appears inside that Player's Slot. The rest of the Matchup keeps wor
   - Fair / Volume / Best sorting, plus Lower-Is-Better detection
   - Leader selection (ties, all tied, missing values, fewer than 2 values)
   - Score
+  - Profile Changed's relative text
   - URL search-param parsing and its fallbacks
   - Benchmark averaging across regions, Rank Tier choice, and Rank-Adjusted Win Rate and its Leaders
   - Hero Pools, Shared Heroes, their Leaders and the tally

@@ -1,5 +1,5 @@
 import { createMemoryHistory } from '@tanstack/react-router'
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../App'
@@ -103,6 +103,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.useRealTimers()
 })
 
 describe('Matchup page', () => {
@@ -1031,5 +1032,109 @@ describe('global hero stats', () => {
       expect(screen.queryByText(/ vs /)).not.toBeInTheDocument()
       expect(requests).toEqual([])
     })
+  })
+})
+
+describe('Player header flair', () => {
+  const flair = {
+    username: 'x',
+    avatar: null,
+    competitive: null,
+    namecard: 'https://example.test/namecard.png',
+    title: 'Data Broker',
+    endorsement: { level: 4, frame: 'https://example.test/endorsement.svg#icon' },
+  }
+
+  const header = async (name: string) => {
+    const found = await screen.findByRole('columnheader', { name })
+    await within(found).findByRole('button', { name: `Change ${name}` })
+    return found
+  }
+
+  it('shows the namecard, title and endorsement of a Player who has them', async () => {
+    fakeOverfast({ 'Anna-1111': { summary: flair, stats: anaStats(9000, 6) }, 'Bob-2222': { stats: anaStats(8000, 4) } })
+    renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
+
+    const anna = await header('Anna#1111')
+    expect(await within(anna).findByText('Data Broker')).toBeInTheDocument()
+    expect(anna.querySelector('.namecard')).toHaveAttribute('src', flair.namecard)
+    const endorsement = within(anna).getByRole('img', { name: 'Endorsement level 4' })
+    expect(endorsement).toHaveTextContent('4')
+    expect(endorsement.querySelector('img')).toHaveAttribute('src', flair.endorsement.frame)
+    // The strip still marks the Slot.
+    expect(anna.querySelector('.slot-strip')).toBeInTheDocument()
+  })
+
+  it('shows nothing for a Player without them, or with OverFast\'s "no information" level 0', async () => {
+    fakeOverfast({
+      'Anna-1111': { summary: flair, stats: anaStats(9000, 6) },
+      'Bob-2222': {
+        summary: { ...summary(), namecard: null, title: null, endorsement: { level: 0, frame: 'https://example.test/0.svg' }, last_updated_at: null },
+        stats: anaStats(8000, 4),
+      },
+      'Cleo-3333': { stats: anaStats(7000, 5) },
+    })
+    renderAt('/?players=Anna-1111,Bob-2222,Cleo-3333&hero=ana')
+
+    await screen.findByText('Data Broker')
+    for (const name of ['Bob#2222', 'Cleo#3333']) {
+      const slot = await header(name)
+      await within(slot).findByText(/Leads/)
+      expect(slot.querySelector('.namecard, .flair')).not.toBeInTheDocument()
+      expect(within(slot).queryByText(/Profile changed/)).not.toBeInTheDocument()
+    }
+  })
+
+  it('leaves the namecard out of the Change form', async () => {
+    fakeOverfast({ 'Anna-1111': { summary: flair, stats: anaStats(9000, 6) }, 'Bob-2222': { stats: anaStats(8000, 4) } })
+    renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
+    const user = userEvent.setup()
+
+    const anna = await header('Anna#1111')
+    await within(anna).findByText('Data Broker')
+    await user.click(within(anna).getByRole('button', { name: 'Change Anna#1111' }))
+
+    expect(screen.getByRole('columnheader', { name: 'Anna#1111' }).querySelector('.namecard')).not.toBeInTheDocument()
+  })
+
+  it('says when the profile changed, with the exact time on hover', async () => {
+    const now = new Date('2026-11-04T12:00:00Z')
+    vi.useFakeTimers({ toFake: ['Date'], now })
+    const changedAt = new Date(now.getTime() - 3 * 60 * 1000)
+    fakeOverfast({
+      'Anna-1111': { summary: { ...flair, last_updated_at: changedAt.getTime() / 1000 }, stats: anaStats(9000, 6) },
+      'Bob-2222': { stats: anaStats(8000, 4) },
+    })
+    renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
+
+    const changed = await within(await header('Anna#1111')).findByText('Profile changed 3 min ago')
+    expect(changed).toHaveAttribute('dateTime', changedAt.toISOString())
+    expect(changed).toHaveAttribute('title', changedAt.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }))
+  })
+
+  it('ticks forward each minute without fetching again', async () => {
+    const now = new Date('2026-11-04T12:00:00Z')
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], now })
+    fakeOverfast({
+      'Anna-1111': { summary: { ...flair, last_updated_at: now.getTime() / 1000 - 3 * 60 }, stats: anaStats(9000, 6) },
+      'Bob-2222': { stats: anaStats(8000, 4) },
+    })
+    renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
+
+    const anna = await header('Anna#1111')
+    await within(anna).findByText('Profile changed 3 min ago')
+    await screen.findByRole('rowheader', { name: 'Healing Done - Avg per 10 Min' })
+    const fetches = vi.mocked(fetch).mock.calls.length
+
+    act(() => {
+      vi.advanceTimersByTime(60 * 1000)
+    })
+    expect(within(anna).getByText('Profile changed 4 min ago')).toBeInTheDocument()
+
+    act(() => {
+      vi.advanceTimersByTime(2 * 60 * 60 * 1000)
+    })
+    expect(within(anna).getByText('Profile changed 2 hr ago')).toBeInTheDocument()
+    expect(vi.mocked(fetch).mock.calls.length).toBe(fetches)
   })
 })

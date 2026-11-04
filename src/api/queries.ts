@@ -1,9 +1,7 @@
 import { QueryClient, queryOptions } from '@tanstack/react-query'
-import type { RankTier, Region } from '../domain/benchmark'
 import type { Gamemode, Platform } from '../domain/matchupSearch'
 import {
   OverfastError,
-  getGlobalHeroStats,
   getHeroDetails,
   getHeroes,
   getPlayerStats,
@@ -47,14 +45,6 @@ export const heroDetailsQuery = (heroKey: string) =>
     queryKey: ['heroes', heroKey],
     queryFn: () => getHeroDetails(heroKey),
     staleTime: 24 * 60 * 60 * 1000,
-  })
-
-export const globalHeroStatsQuery = (platform: Platform, gamemode: Gamemode, region: Region, tier: RankTier | null) =>
-  queryOptions({
-    // OverFast caches these for an hour.
-    staleTime: 60 * 60 * 1000,
-    queryKey: ['heroStats', platform, gamemode, region, tier],
-    queryFn: () => getGlobalHeroStats(platform, gamemode, region, tier),
   })
 
 export const playerStatsSummaryQuery = (playerId: string, gamemode: Gamemode, platform: Platform) =>

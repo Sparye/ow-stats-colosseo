@@ -1,4 +1,3 @@
-import type { GlobalHeroStat, RankTier, Region } from '../domain/benchmark'
 import type { HeroStats } from '../domain/comparison'
 import type { Gamemode, Platform } from '../domain/matchupSearch'
 
@@ -83,20 +82,10 @@ export async function isPublicProfile(playerId: string): Promise<boolean> {
   return results.find((r) => r.player_id === playerId)?.is_public ?? true
 }
 
-export type Hitpoints = { health: number; armor: number; shields: number; total: number }
-
-export type Ability = { name: string; description: string; icon: string }
-
-/** The parts of `GET /heroes/{hero_key}` the hero cell shows. OverFast has no Hitpoints for some heroes. */
-export type HeroDetails = { subrole: string | null; hitpoints: Hitpoints | null; abilities: Ability[] }
+/** The part of `GET /heroes/{hero_key}` the hero cell shows. */
+export type HeroDetails = { subrole: string | null }
 
 export const getHeroDetails = (heroKey: string) => get<HeroDetails>(`/heroes/${encodeURIComponent(heroKey)}`)
-
-/** One hero's rates across everyone playing, for one Platform, Gamemode and region; one row per hero. */
-export const getGlobalHeroStats = (platform: Platform, gamemode: Gamemode, region: Region, tier: RankTier | null) =>
-  get<GlobalHeroStat[]>(
-    `/heroes/stats?platform=${platform}&gamemode=${gamemode}&region=${region}${tier ? `&competitive_division=${tier}` : ''}`,
-  )
 
 /** One hero or role's totals, as `/players/{id}/stats/summary` returns them. */
 export type StatsSummaryEntry = {

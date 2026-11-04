@@ -24,14 +24,14 @@ Preconditions:
 - `$S doctor` prints `HEALTHY`.
 
 - **Empty start.** Run `$S goto '/?hero=ana&gamemode=competitive&platform=pc'`. The snapshot shows two `columnheader "Empty slot"`.
-- **Add first Player.** Run `$S type 'combobox "BATTLETAG"' 'Jingwen#11594'` and then `$S wait "location.search.includes('Jingwen-11594')"`. Slot 1 becomes `columnheader "Jingwen#11594"`.
+- **Add first Player.** Run `$S type 'combobox "BATTLETAG"' 'Seagull#1894'` and then `$S wait "location.search.includes('Seagull-1894')"`. Slot 1 becomes `columnheader "Seagull#1894"`.
 - **Add second Player.** Run `$S type 'combobox "BATTLETAG"' 'JigglyPuff#11568'` and then `$S wait "document.querySelectorAll('.score').length === 2"`. Both Slots show `LEADS`.
 - **Malformed tag.** Run `$S press 'button "+ ADD PLAYER"'` and then `$S type 'combobox "BATTLETAG"' 'nonsense'`. An alert reads `Enter a BattleTag like Name#1234`, and the URL is unchanged.
 - **Duplicate.** Run `$S type 'combobox "BATTLETAG"' 'jingwen#11594'`. An alert reads `Already in this Matchup`.
 - **Third Player.** Run `$S type 'combobox "BATTLETAG"' 'Alone2die#1446'` and then `$S wait "document.querySelectorAll('.score').length === 3"`. The stat label column moves to the left.
 - **Change, same Player back.** Run `$S press 'button "Change JigglyPuff#11568"'`. `$S js "document.activeElement.value + '|' + document.activeElement.placeholder"` prints `|JigglyPuff#11568`, and a Remove link appears. Run `$S press 'button "ADD"'`; the Slot shows `columnheader "JigglyPuff#11568"` again and the URL is unchanged.
 - **Change, new Player.** Run `$S press 'button "Change JigglyPuff#11568"'`. Then run `$S type 'combobox "BATTLETAG"' 'Ghost#9999'` and `$S js "location.search"`. Slot 2 now holds `Ghost-9999`, in the same position.
-- **Remove.** Run `$S press 'button "Change Ghost#9999"'`, then `$S orca click --element $($S ref 'button "Remove"')`, then `$S js "location.search"`. The players are `Jingwen-11594,Alone2die-1446`.
+- **Remove.** Run `$S press 'button "Change Ghost#9999"'`, then `$S orca click --element $($S ref 'button "Remove"')`, then `$S js "location.search"`. The players are `Seagull-1894,Alone2die-1446`.
 - **Proof.** Take `$S snap build-matchup-final` and `$S shot build-matchup-final`.
 
 ## Gotchas

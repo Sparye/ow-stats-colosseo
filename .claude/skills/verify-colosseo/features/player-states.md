@@ -21,9 +21,9 @@ Preconditions:
 - `$S doctor` prints `HEALTHY`.
 - None of the Test Players has Competitive Genji games on PC (checked 2026-10-26).
 
-- **Not found.** Run `$S goto '/?players=Jingwen-11594,Ghost-9999&hero=ana&gamemode=competitive&platform=pc'` and then `$S wait "document.body.innerText.includes('Player not found')"`. The `Ghost#9999` Slot shows the not-found message, and the Jingwen Slot still loads.
+- **Not found.** Run `$S goto '/?players=Seagull-1894,Ghost-9999&hero=ana&gamemode=competitive&platform=pc'` and then `$S wait "document.body.innerText.includes('Player not found')"`. The `Ghost#9999` Slot shows the not-found message, and the Seagull Slot still loads.
 - **Wrong case.** Run `$S goto '/?players=jingwen-11594,JigglyPuff-11568&hero=ana&gamemode=competitive&platform=pc'`. The `jingwen#11594` Slot shows the not-found message.
-- **No games.** Run `$S goto '/?players=Jingwen-11594,JigglyPuff-11568&hero=genji&gamemode=competitive&platform=pc'` and then `$S wait "document.querySelectorAll('.message').length === 2"`. Both Slots read `No Genji games in Competitive on PC`.
+- **No games.** Run `$S goto '/?players=Seagull-1894,JigglyPuff-11568&hero=genji&gamemode=competitive&platform=pc'` and then `$S wait "document.querySelectorAll('.message').length === 2"`. Both Slots read `No Genji games in Competitive on PC`.
 - **Proof.** Take `$S snap player-states-not-found` and `$S shot player-states-not-found` after the first step, and the same for no games.
 
 ## Gotchas

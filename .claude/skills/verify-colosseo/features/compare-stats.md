@@ -23,7 +23,7 @@ Preconditions:
 
 - `$S doctor` prints `HEALTHY`.
 
-- **Two Players.** Run `$S goto '/?players=Jingwen-11594,JigglyPuff-11568&hero=ana&gamemode=competitive&platform=pc'` and then `$S wait "document.querySelectorAll('.score').length === 2"`.
+- **Two Players.** Run `$S goto '/?players=Seagull-1894,JigglyPuff-11568&hero=ana&gamemode=competitive&platform=pc'` and then `$S wait "document.querySelectorAll('.score').length === 2"`.
 - **Mirrored layout.** Run `$S js "document.querySelector('.stat-table').className"`. It includes `mirrored`.
 - **Leaders and Score.** Run `$S js "document.querySelectorAll('[aria-label$=\", leads\"]').length"` (at least 1) and `$S js "[...document.querySelectorAll('.score')].map(s => s.textContent).join(' | ')"`. Each part matches `Leads N of M`, with the same M in both.
 - **Season.** The snapshot shows `SEASON` in both headers.
@@ -31,7 +31,7 @@ Preconditions:
 - **Shared section.** Run `$S goto` with `&stats=best` added; `tab "Best Stats"` is selected on load.
 - **Heroes section.** Run `$S goto '/?players=JigglyPuff-11568,Alone2die-1446&gamemode=quickplay&platform=pc'`, wait for `.score`, then `$S orca keypress --key h` and `$S wait "document.querySelectorAll('.shared-hero').length > 0"`. `location.search` has `stats=heroes`, the `.tally` cells read `Leads on N of M shared heroes`, and `.shared-hero .leader` exists. Then `$S click 'button "Ana, '` and `$S wait "location.search.includes('hero=ana')"`: `stats=` is gone and there are three tabs. To check a phone, run `$S orca set device --name "iPhone 12"` after the `goto`, which resets it, and check `document.documentElement.scrollWidth === innerWidth`.
 - **Flair.** Run `$S js "[...document.querySelectorAll('.player-header')].map(h => [h.querySelector('.namecard')?.naturalWidth, h.querySelector('.player-title')?.textContent, h.querySelector('.endorsement')?.textContent, h.querySelector('.profile-changed')?.textContent].join(' / ')).join(' | ')"`. `naturalWidth` above 0 means the Namecard loaded. Each header's `offsetWidth` equals its `scrollWidth`.
-- **Three Players.** Run `$S goto '/?players=Jingwen-11594,JigglyPuff-11568,Alone2die-1446&hero=ana&gamemode=competitive&platform=pc'` and then `$S wait "document.querySelectorAll('.score').length === 3"`. `className` now includes `columns`, and each row's first cell is its `rowheader`.
+- **Three Players.** Run `$S goto '/?players=Seagull-1894,JigglyPuff-11568,Alone2die-1446&hero=ana&gamemode=competitive&platform=pc'` and then `$S wait "document.querySelectorAll('.score').length === 3"`. `className` now includes `columns`, and each row's first cell is its `rowheader`.
 - **Proof.** Take `$S snap compare-stats-three` and `$S shot compare-stats-three`.
 
 ## Gotchas

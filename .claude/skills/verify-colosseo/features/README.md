@@ -12,7 +12,7 @@ This directory is the maintained source for verifying what users see in Overwatc
 ## Driving conventions
 
 - Start each recipe with a `goto` to the URL it names, rather than relying on where the last recipe left the page.
-- Target elements by the accessible names the snapshot shows. Labels styled with `text-transform: uppercase` show up uppercased (`button "ADD"`, `combobox "BATTLETAG"`), while `aria-label`s keep their case (`button "Change Jingwen#11594"`).
+- Target elements by the accessible names the snapshot shows. Labels styled with `text-transform: uppercase` show up uppercased (`button "ADD"`, `combobox "BATTLETAG"`), while `aria-label`s keep their case (`button "Change Seagull#1894"`).
 - Use `click` for buttons and options, and confirm every action took effect with `wait`. Orca's input delivery is unreliable:
   - The first click after a `goto` often does nothing; retry it once.
   - Keys (`press`, `type`) do nothing while the tab's document doesn't have focus (`$S js "document.hasFocus()"` prints `false`).
@@ -37,5 +37,4 @@ Each feature file has an H1 title, one paragraph on what the user sees, and then
 - [Recent Players](./recent-players.md): suggesting BattleTags that loaded before, and never ones that didn't.
 - [Filters](./filters.md): Gamemode, Platform and Hero Scope.
 - [Compare stats](./compare-stats.md): Leaders, Score, the stat sections, Season labels and layout by Player count.
-- [Benchmark and Rank-Adjusted Win Rate](./benchmark.md): comparing Players with the field, and the win rate row's Rank-adjusted Leader.
 - [Player states](./player-states.md): not found, no games and could-not-load messages in a Slot.

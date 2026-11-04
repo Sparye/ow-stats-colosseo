@@ -89,14 +89,14 @@ cmd_doctor() {
   [[ $ok == 1 ]] && echo "HEALTHY run $RUN_ID" || { echo "UNHEALTHY run $RUN_ID"; exit 1; }
 }
 
-# goto <path-and-query>: opens a page of this run's app, e.g. goto '/?players=Jingwen-11594'
+# goto <path-and-query>: opens a page of this run's app, e.g. goto '/?players=Seagull-1894'
 cmd_goto() {
   load_state
   log_action "goto $1"
   o goto --url "$URL$1" | jq -e '.ok' >/dev/null
 }
 
-# ref <literal text>: the ref of the first snapshot line containing the text, e.g. ref 'button "Change Jingwen#11594"'
+# ref <literal text>: the ref of the first snapshot line containing the text, e.g. ref 'button "Change Seagull#1894"'
 cmd_ref() {
   load_state
   o snapshot | jq -r '.result.snapshot' | grep -F -- "$1" | head -1 | grep -o 'ref=e[0-9]*' | cut -d= -f2 \

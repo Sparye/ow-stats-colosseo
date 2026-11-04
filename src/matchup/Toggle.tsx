@@ -22,33 +22,3 @@ export function Toggle<T extends string>({ label, value, options, onChange }: Pr
     </div>
   )
 }
-
-type SwitchProps = {
-  label: string
-  on: boolean
-  onChange: (on: boolean) => void
-  /** Why it can't be used right now, shown on the switch. Also makes it read as off. */
-  disabledReason?: string
-}
-
-/** A single on/off for something extra in the Matchup. */
-export function Switch({ label, on, onChange, disabledReason }: SwitchProps) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      className="switch"
-      aria-checked={on && !disabledReason}
-      disabled={!!disabledReason}
-      onClick={() => onChange(!on)}
-    >
-      {label}
-      {disabledReason && (
-        <>
-          {' '}
-          <span className="switch-reason">{disabledReason}</span>
-        </>
-      )}
-    </button>
-  )
-}

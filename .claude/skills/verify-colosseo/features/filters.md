@@ -20,7 +20,7 @@ Preconditions:
 
 - `$S doctor` prints `HEALTHY`.
 
-- **Start.** Run `$S goto '/?players=Jingwen-11594,JigglyPuff-11568&hero=ana&gamemode=competitive&platform=pc'` and then `$S wait "document.querySelectorAll('.score').length === 2"`.
+- **Start.** Run `$S goto '/?players=Seagull-1894,JigglyPuff-11568&hero=ana&gamemode=competitive&platform=pc'` and then `$S wait "document.querySelectorAll('.score').length === 2"`.
 - **Gamemode.** Run `$S orca click --element $($S ref 'radio "QUICK PLAY"')` and then `$S wait "location.search.includes('gamemode=quickplay')"`. The Season labels disappear from the Slot headers.
 - **Platform.** Run `$S orca click --element $($S ref 'radio "CONSOLE"')` and then `$S wait "location.search.includes('platform=console')"`. Each Slot shows a stat table or a no-games message for Console.
 - **Hero picker.** Run `$S press 'button "ANA"'`. The snapshot shows the `Choose a hero` popover with the role headings `Tank`, `Damage` and `Support`. Then run `$S press 'button "Kiriko"'` and `$S wait "location.search.includes('hero=kiriko')"`. The table becomes `table "Kiriko stats"`, and the popover is closed.

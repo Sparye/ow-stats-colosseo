@@ -9,16 +9,22 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react'
+import type { Hero } from '../api/overfast'
 import { leadCounts, type Comparison, type StatRow } from '../domain/comparison'
-import { STAT_SECTIONS, type StatSection } from '../domain/matchupSearch'
+import { type StatSection, type TableSection } from '../domain/matchupSearch'
 import { SLOT_COLORS } from '../domain/slotColors'
 import { formatStat } from './format'
+import { HeroesSection } from './HeroesSection'
+import type { HeroOverlapState } from './useHeroOverlap'
 
 const SECTIONS: Record<StatSection, { title: string; note: string; shortcut: string }> = {
   fair: { title: 'Fair', note: "Averages and rates, so playtime doesn't decide them", shortcut: 'F' },
   volume: { title: 'Volume', note: 'Totals that grow with playtime', shortcut: 'V' },
   best: { title: 'Best', note: 'Single-game and single-life records', shortcut: 'B' },
 }
+
+const HEROES_TAB = { title: 'Heroes', shortcut: 'H' }
+const tabFor = (section: TableSection) => (section === 'heroes' ? HEROES_TAB : SECTIONS[section])
 
 type Props = {
   comparison: Comparison
@@ -27,9 +33,16 @@ type Props = {
   /** What goes in the hero cell: the Hero Scope and the hero picker. */
   heroPicker: ReactNode
   heroName: string
-  /** Which section's Stat Rows show under the Sample Size. */
-  section: StatSection
-  onSectionChange: (section: StatSection) => void
+  /** The sections on offer, one tab each. */
+  sections: readonly TableSection[]
+  /** Which section shows under the Sample Size. */
+  section: TableSection
+  onSectionChange: (section: TableSection) => void
+  /** What the Heroes section shows. */
+  heroOverlap: HeroOverlapState
+  heroes: Hero[] | undefined
+  /** Sets the Hero Scope, from a hero in the Heroes section. */
+  onHeroSelect: (heroKey: string) => void
 }
 
 /**
@@ -41,7 +54,18 @@ type Props = {
  * sideways in step with them instead. The section tabs ride in the same band,
  * so switching between Fair, Volume and Best Stats is always one click away.
  */
-export function StatTable({ comparison, headers, heroPicker, heroName, section, onSectionChange }: Props) {
+export function StatTable({
+  comparison,
+  headers,
+  heroPicker,
+  heroName,
+  sections,
+  section,
+  onSectionChange,
+  heroOverlap,
+  heroes,
+  onHeroSelect,
+}: Props) {
   const slotCount = headers.length
   const mirrored = slotCount === 2
   const tableClass = `stat-table ${mirrored ? 'mirrored' : 'columns'}`
@@ -53,15 +77,18 @@ export function StatTable({ comparison, headers, heroPicker, heroName, section, 
   const stuck = useRowsUnder(band, scroller)
   const panelId = useId()
 
-  const showSection = (next: StatSection) => {
-    // Deep in the Stat Rows, start the new section from its top rather than somewhere in its middle.
+  // Deep in the Stat Rows, start what's next from its top rather than somewhere in its middle.
+  const backToTop = () => {
     if (band.current && scroller.current) {
       const under = band.current.getBoundingClientRect().bottom - scroller.current.getBoundingClientRect().top
       if (under > 1) window.scrollBy(0, -under)
     }
+  }
+  const showSection = (next: TableSection) => {
+    backToTop()
     onSectionChange(next)
   }
-  useSectionShortcuts(showSection)
+  useSectionShortcuts(showSection, sections)
 
   const heroCell = (
     <div key="hero" className="hero-cell" role="columnheader" aria-label="Stat">
@@ -127,10 +154,13 @@ export function StatTable({ comparison, headers, heroPicker, heroName, section, 
           </div>
         </div>
         <SectionTabs
+          sections={sections}
           section={section}
           onSelect={showSection}
           panelId={panelId}
-          leads={(s) => leadCounts(comparison[s], slotCount)}
+          leads={(s) =>
+            s === 'heroes' ? heroOverlap.tally.map((score) => score?.leads ?? 0) : leadCounts(comparison[s], slotCount)
+          }
         />
       </div>
 
@@ -145,10 +175,24 @@ export function StatTable({ comparison, headers, heroPicker, heroName, section, 
               role="rowgroup"
               id={panelId}
               className="section"
-              aria-label={`${SECTIONS[section].title} Stats`}
+              aria-label={section === 'heroes' ? 'Heroes' : `${SECTIONS[section].title} Stats`}
             >
-              <p className="section-note">{SECTIONS[section].note}</p>
-              {rows(comparison[section])}
+              {section === 'heroes' ? (
+                <HeroesSection
+                  overlap={heroOverlap}
+                  heroes={heroes}
+                  mirrored={mirrored}
+                  onHeroSelect={(key) => {
+                    backToTop()
+                    onHeroSelect(key)
+                  }}
+                />
+              ) : (
+                <>
+                  <p className="section-note">{SECTIONS[section].note}</p>
+                  {rows(comparison[section])}
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -241,34 +285,35 @@ function useHiddenSides(ref: RefObject<HTMLElement | null>) {
 }
 
 type TabsProps = {
-  section: StatSection
-  onSelect: (section: StatSection) => void
+  sections: readonly TableSection[]
+  section: TableSection
+  onSelect: (section: TableSection) => void
   /** The id of the rowgroup the tabs switch. */
   panelId: string
-  /** How many of a section's Stat Rows each Slot leads. */
-  leads: (section: StatSection) => number[]
+  /** How many of a section's rows each Slot leads. */
+  leads: (section: TableSection) => number[]
 }
 
 /**
  * One tab per section, each with a tug-of-war bar of who leads most of its
  * Stat Rows in their Slot Color. Arrow keys move between the tabs.
  */
-function SectionTabs({ section, onSelect, panelId, leads }: TabsProps) {
+function SectionTabs({ sections, section, onSelect, panelId, leads }: TabsProps) {
   const onKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    const at = STAT_SECTIONS.indexOf(section)
-    const last = STAT_SECTIONS.length - 1
+    const at = sections.indexOf(section)
+    const last = sections.length - 1
     const to = { ArrowLeft: at - 1, ArrowRight: at + 1, Home: 0, End: last }[event.key]
     if (to === undefined) return
     event.preventDefault()
     const index = Math.min(last, Math.max(0, to))
     event.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]')[index]?.focus()
-    onSelect(STAT_SECTIONS[index])
+    onSelect(sections[index])
   }
 
   return (
     <div className="section-tabs" role="tablist" aria-label="Stats" onKeyDown={onKeyDown}>
-      {STAT_SECTIONS.map((s) => {
-        const { title, shortcut } = SECTIONS[s]
+      {sections.map((s) => {
+        const { title, shortcut } = tabFor(s)
         return (
           <button
             key={s}
@@ -281,7 +326,7 @@ function SectionTabs({ section, onSelect, panelId, leads }: TabsProps) {
             onClick={() => onSelect(s)}
           >
             <span className="tab-title">
-              {title} <span className="tab-suffix">Stats</span>
+              {title} {s !== 'heroes' && <span className="tab-suffix">Stats</span>}
               <kbd aria-hidden="true">{shortcut}</kbd>
             </span>
             <LeadBar counts={leads(s)} />
@@ -302,14 +347,14 @@ function LeadBar({ counts }: { counts: number[] }) {
   )
 }
 
-/** F, V and B switch sections from anywhere on the page, except while typing or in a popover. */
-function useSectionShortcuts(show: (section: StatSection) => void) {
+/** F, V, B and H switch sections from anywhere on the page, except while typing or in a popover. */
+function useSectionShortcuts(show: (section: TableSection) => void, sections: readonly TableSection[]) {
   const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
     if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return
     const target = event.target instanceof Element ? event.target : null
     if (target?.closest('input, textarea, select, [contenteditable], [popover]')) return
     const key = event.key.toUpperCase()
-    const section = STAT_SECTIONS.find((s) => SECTIONS[s].shortcut === key)
+    const section = sections.find((s) => tabFor(s).shortcut === key)
     if (section) show(section)
   })
 

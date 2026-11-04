@@ -6,7 +6,13 @@ import { App } from '../App'
 import { createQueryClient } from '../api/queries'
 import { createAppRouter } from '../router'
 
-type Fake = { summary?: object; stats?: object | null; isPublic?: boolean }
+type Fake = {
+  summary?: object
+  stats?: object | null
+  isPublic?: boolean
+  /** The `heroes` of `/stats/summary`, or a status code to fail with. */
+  heroTotals?: object | number
+}
 
 /**
  * Stands in for OverFast: answers each player request from `players`, 404 otherwise.
@@ -23,7 +29,10 @@ function fakeOverfast(
       const url = new URL(input)
       const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status })
       if (url.pathname === '/heroes') {
-        return json([{ key: 'ana', name: 'Ana', portrait: 'https://example.test/ana.png', role: 'support' }])
+        return json([
+          { key: 'ana', name: 'Ana', portrait: 'https://example.test/ana.png', role: 'support' },
+          { key: 'mercy', name: 'Mercy', portrait: 'https://example.test/mercy.png', role: 'support' },
+        ])
       }
       if (url.pathname === '/players') {
         const id = url.searchParams.get('name')!
@@ -35,6 +44,11 @@ function fakeOverfast(
         const nextCheckAt = nextChecks[decodeURIComponent(rawId)]
         const details = { error: 'Player not found', ...(nextCheckAt && { next_check_at: nextCheckAt }) }
         return json(notFoundShape === 'nested' ? { error: details } : details, 404)
+      }
+      if (rest.join('/') === 'stats/summary') {
+        const { heroTotals } = player
+        if (typeof heroTotals === 'number') return json({ error: 'Nope' }, heroTotals)
+        return json({ general: null, roles: null, heroes: heroTotals ?? null })
       }
       return rest.join('/') === 'summary' ? json(player.summary ?? summary()) : json(player.stats ?? null)
     }),
@@ -450,6 +464,218 @@ describe('Matchup page', () => {
       await user.keyboard('Bob')
 
       expect(router.state.location.search.stats).toBe('fair')
+    })
+  })
+
+  describe('Heroes section', () => {
+    const hero = (games: number, winrate: number, kda = 2, timePlayed = games * 600) => ({
+      games_played: games,
+      winrate,
+      kda,
+      time_played: timePlayed,
+    })
+    /** The cells of a Shared Hero's row, in on-screen order. */
+    const heroRow = async (name: string) => {
+      const button = await screen.findByRole('button', { name })
+      const row = button.closest('[role="row"]') as HTMLElement
+      return Array.from(row.querySelectorAll('[role="rowheader"], [role="cell"]')).map((el) => el.textContent)
+    }
+
+    beforeEach(() => {
+      fakeOverfast({
+        'Anna-1111': {
+          stats: { ...anaStats(9000, 6), 'all-heroes': anaStats(9000, 6).ana },
+          heroTotals: { ana: hero(10, 70, 4.32), mercy: hero(2, 100), lucio: hero(5, 50) },
+        },
+        'Bob-2222': {
+          stats: { ...anaStats(8000, 4), 'all-heroes': anaStats(8000, 4).ana },
+          heroTotals: { ana: hero(4, 50, 1.5), mercy: hero(20, 40), genji: hero(1, 0, 0, 90) },
+        },
+      })
+    })
+
+    it('offers the tab on All Heroes but not on a single hero', async () => {
+      renderAt('/?players=Anna-1111,Bob-2222')
+      expect(await screen.findByRole('tab', { name: 'Heroes' })).toBeInTheDocument()
+      cleanup()
+
+      renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
+      expect(await screen.findByRole('tab', { name: 'Fair Stats' })).toBeInTheDocument()
+      expect(screen.queryByRole('tab', { name: 'Heroes' })).not.toBeInTheDocument()
+    })
+
+    it('opens with H and keeps the choice in the URL', async () => {
+      const router = renderAt('/?players=Anna-1111,Bob-2222')
+      const user = userEvent.setup()
+      await screen.findByRole('tab', { name: 'Heroes' })
+
+      await user.keyboard('h')
+
+      await waitFor(() => expect(router.state.location.search.stats).toBe('heroes'))
+      expect(router.state.location.searchStr).toContain('stats=heroes')
+      expect(screen.getByRole('rowgroup', { name: 'Heroes' })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: 'Heroes' })).toHaveAttribute('aria-selected', 'true')
+    })
+
+    it('ignores H on a single hero', async () => {
+      const router = renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
+      const user = userEvent.setup()
+      await screen.findByRole('rowheader', { name: 'Healing Done - Avg per 10 Min' })
+
+      await user.keyboard('h')
+
+      expect(router.state.location.search.stats).toBe('fair')
+    })
+
+    it('falls back to Fair Stats when a link asks for it on a single hero', async () => {
+      const router = renderAt('/?players=Anna-1111,Bob-2222&hero=ana&stats=heroes')
+
+      expect(await screen.findByRole('rowheader', { name: 'Healing Done - Avg per 10 Min' })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: 'Fair Stats' })).toHaveAttribute('aria-selected', 'true')
+      expect(router.state.location.search.stats).toBe('fair')
+    })
+
+    it('marks heroes at least two Players have played in their Hero Pools', async () => {
+      renderAt('/?players=Anna-1111,Bob-2222&stats=heroes')
+
+      expect(await screen.findAllByRole('button', { name: /^Ana, .* played, Shared Hero$/ })).toHaveLength(2)
+      // `/heroes` doesn't list Genji here, so the portrait falls back to the hero key.
+      expect(screen.getByRole('button', { name: /^genji, .* played$/ })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /^genji, .*Shared Hero$/ })).not.toBeInTheDocument()
+    })
+
+    it('shows a Player’s top heroes, with a way to see the rest', async () => {
+      const heroTotals = Object.fromEntries(Array.from({ length: 10 }, (_, i) => [`hero-${i}`, hero(10 - i, 50)]))
+      fakeOverfast({ 'Anna-1111': { stats: anaStats(9000, 6), heroTotals }, 'Bob-2222': { stats: anaStats(8000, 4), heroTotals: {} } })
+      renderAt('/?players=Anna-1111,Bob-2222&stats=heroes')
+      const user = userEvent.setup()
+
+      const more = await screen.findByRole('button', { name: '+2 more' })
+      expect(screen.getAllByRole('button', { name: /^hero-\d, / })).toHaveLength(8)
+
+      await user.click(more)
+      expect(screen.getAllByRole('button', { name: /^hero-\d, / })).toHaveLength(10)
+      expect(screen.getByRole('button', { name: 'Show fewer' })).toBeInTheDocument()
+    })
+
+    it('puts the hero between two Players and leads on win rate', async () => {
+      renderAt('/?players=Anna-1111,Bob-2222&stats=heroes')
+
+      expect(await heroRow('Ana')).toEqual(['▲70%4.32 KDA 10 games', 'Ana', '50%1.5 KDA 4 games'])
+      const leader = screen.getByRole('cell', { name: '70% win rate, 4.32 KDA, 10 games, leads' })
+      expect(leader).toHaveClass('leader')
+    })
+
+    it('puts the hero on the left with three Players, with — for a Player who has not played it', async () => {
+      fakeOverfast({
+        'Anna-1111': { stats: anaStats(9000, 6), heroTotals: { ana: hero(10, 70), mercy: hero(10, 40) } },
+        'Bob-2222': { stats: anaStats(8000, 4), heroTotals: { ana: hero(10, 50), mercy: hero(10, 60) } },
+        'Cleo-3333': { stats: anaStats(7000, 5), heroTotals: { mercy: hero(10, 50) } },
+      })
+      renderAt('/?players=Anna-1111,Bob-2222,Cleo-3333&stats=heroes')
+
+      expect(await heroRow('Ana')).toEqual(['Ana', '▲70%2 KDA 10 games', '50%2 KDA 10 games', '—'])
+    })
+
+    it('dims a Player under 3 games and keeps them from leading, and says so', async () => {
+      renderAt('/?players=Anna-1111,Bob-2222&stats=heroes')
+
+      expect(await heroRow('Mercy')).toEqual(['100%2 KDA 2 games', 'Mercy', '40%2 KDA 20 games'])
+      expect(screen.getByRole('cell', { name: /^100% win rate.*too few games to compare$/ })).toHaveClass('thin')
+      expect(screen.getByText(/Under 3 games is dimmed/)).toBeInTheDocument()
+    })
+
+    it('tallies the Shared Heroes each Player leads, in the section and in the Score', async () => {
+      renderAt('/?players=Anna-1111,Bob-2222&stats=heroes')
+
+      await screen.findByRole('button', { name: 'Ana' })
+      const [anna, bob] = screen.getAllByText(/^Leads on/).map((el) => el.textContent)
+      // Mercy has no Leader, so Ana is the only hero that counts.
+      expect(anna).toBe('Leads on 1 of 1 shared hero')
+      expect(bob).toBe('Leads on 0 of 1 shared hero')
+      const score = await within(screen.getByRole('columnheader', { name: 'Anna#1111' })).findByText(/Leads/)
+      expect(score).toHaveTextContent('Leads 1 of 1')
+    })
+
+    it('says when no Shared Hero has a Leader', async () => {
+      fakeOverfast({
+        'Anna-1111': { stats: anaStats(9000, 6), heroTotals: { ana: hero(1, 100) } },
+        'Bob-2222': { stats: anaStats(8000, 4), heroTotals: { ana: hero(1, 0) } },
+      })
+      renderAt('/?players=Anna-1111,Bob-2222&stats=heroes')
+
+      expect(await screen.findByText(/None has a Leader yet/)).toBeInTheDocument()
+      expect(screen.queryByText(/^Leads on/)).not.toBeInTheDocument()
+    })
+
+    it('says when the Players have no heroes in common', async () => {
+      fakeOverfast({
+        'Anna-1111': { stats: anaStats(9000, 6), heroTotals: { ana: hero(5, 50) } },
+        'Bob-2222': { stats: anaStats(8000, 4), heroTotals: { mercy: hero(5, 50) } },
+      })
+      renderAt('/?players=Anna-1111,Bob-2222&stats=heroes')
+
+      expect(await screen.findByText('These Players have no heroes in common.')).toBeInTheDocument()
+    })
+
+    it.each([
+      ['a Shared Hero', () => screen.findByRole('button', { name: 'Ana' })],
+      ['a row', async () => (await screen.findByRole('button', { name: 'Ana' })).closest('[role="row"]') as HTMLElement],
+      ['a portrait', async () => (await screen.findAllByRole('button', { name: /^Ana, / }))[0]],
+    ])('sets the Hero Scope from %s and opens its Fair Stats', async (_, find) => {
+      const router = renderAt('/?players=Anna-1111,Bob-2222&stats=heroes')
+      const user = userEvent.setup()
+
+      await user.click(await find())
+
+      await waitFor(() => expect(router.state.location.search.hero).toBe('ana'))
+      expect(router.state.location.search.stats).toBe('fair')
+      expect(router.state.location.searchStr).not.toContain('stats=')
+      expect(await screen.findByRole('rowheader', { name: 'Healing Done - Avg per 10 Min' })).toBeInTheDocument()
+      expect(screen.queryByRole('tab', { name: 'Heroes' })).not.toBeInTheDocument()
+    })
+
+    it('moves to Fair Stats when the hero picker sets a single hero', async () => {
+      const router = renderAt('/?players=Anna-1111,Bob-2222&stats=heroes')
+      const user = userEvent.setup()
+
+      await user.click(await screen.findByRole('button', { name: 'Select Hero' }))
+      await user.click(await screen.findByRole('button', { name: 'Ana', hidden: true, pressed: false }))
+
+      await waitFor(() => expect(router.state.location.search.hero).toBe('ana'))
+      expect(router.state.location.search.stats).toBe('fair')
+    })
+
+    it('hides only the failing Player’s Hero Pool, and leaves their Stat Rows alone', async () => {
+      fakeOverfast({
+        'Anna-1111': { stats: { 'all-heroes': anaStats(9000, 6).ana }, heroTotals: { ana: hero(5, 50) } },
+        'Bob-2222': { stats: { 'all-heroes': anaStats(8000, 4).ana }, heroTotals: 404 },
+      })
+      renderAt('/?players=Anna-1111,Bob-2222&stats=heroes')
+
+      expect(await screen.findByText("Couldn't load this Hero Pool")).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /^Ana, / })).toBeInTheDocument()
+      const bob = screen.getByRole('columnheader', { name: 'Bob#2222' })
+      expect(within(bob).queryByText("Couldn't load stats")).not.toBeInTheDocument()
+      expect(within(bob).queryByText(/Player not found/)).not.toBeInTheDocument()
+    })
+
+    it('asks for hero totals only on All Heroes, and once per Player', async () => {
+      const router = renderAt('/?players=Anna-1111,Bob-2222&hero=ana')
+      const user = userEvent.setup()
+      await screen.findByRole('rowheader', { name: 'Healing Done - Avg per 10 Min' })
+      const totalsRequests = () =>
+        vi.mocked(fetch).mock.calls.filter(([url]) => String(url).includes('/stats/summary')).length
+      expect(totalsRequests()).toBe(0)
+
+      await user.click(screen.getByRole('button', { name: 'Change Hero' }))
+      await user.click(await screen.findByRole('button', { name: 'All Heroes', hidden: true }))
+      await waitFor(() => expect(router.state.location.search.hero).toBe('all-heroes'))
+      await screen.findByRole('tab', { name: 'Heroes' })
+      await user.keyboard('h')
+      await screen.findByRole('button', { name: 'Ana' })
+
+      expect(totalsRequests()).toBe(2)
     })
   })
 })

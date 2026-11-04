@@ -4,12 +4,13 @@ import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 
 import { heroesQuery } from '../api/queries'
 import { isSamePlayer, parseBattleTag } from '../domain/battleTag'
 import { buildComparison } from '../domain/comparison'
-import { MAX_PLAYERS, type MatchupSearch } from '../domain/matchupSearch'
+import { MAX_PLAYERS, sectionFor, sectionsFor, type MatchupSearch } from '../domain/matchupSearch'
 import { SLOT_COLORS } from '../domain/slotColors'
 import { HeroPicker } from './HeroPicker'
 import { EmptySlotHeader, PlayerHeader } from './PlayerHeader'
 import { StatTable } from './StatTable'
 import { Toggle } from './Toggle'
+import { useHeroOverlap } from './useHeroOverlap'
 import { useRecentPlayers } from './useRecentPlayers'
 import { useSlots } from './useSlots'
 
@@ -17,8 +18,10 @@ export function MatchupPage() {
   const search = useSearch({ from: '__root__' })
   const navigate = useNavigate()
   // Every control sits in the sticky band, so changing one keeps your place in the Stat Rows.
-  const setSearch = (patch: Partial<MatchupSearch>) =>
-    void navigate({ to: '/', search: { ...search, ...patch }, resetScroll: false })
+  const setSearch = (patch: Partial<MatchupSearch>) => {
+    const next = { ...search, ...patch }
+    void navigate({ to: '/', search: { ...next, stats: sectionFor(next.hero, next.stats) }, resetScroll: false })
+  }
 
   const { data: heroes } = useQuery(heroesQuery())
   const hero = heroes?.find((h) => h.key === search.hero)
@@ -42,6 +45,7 @@ export function MatchupPage() {
       return slot?.status === 'ready' ? slot.heroStats : null
     }),
   )
+  const heroOverlap = useHeroOverlap(search, slotCount)
 
   /** Adds a Player to an empty Slot, or swaps the Player in a filled one. */
   const placePlayer = (index: number, input: string): string | null => {
@@ -76,7 +80,7 @@ export function MatchupPage() {
         key={slot.playerId}
         slot={slot}
         color={SLOT_COLORS[i]}
-        score={comparison.scores[search.stats][i]}
+        score={search.stats === 'heroes' ? heroOverlap.tally[i] : comparison.scores[search.stats][i]}
         hero={hero}
         heroName={heroName}
         gamemode={search.gamemode}
@@ -140,8 +144,12 @@ export function MatchupPage() {
           headers={headers}
           heroPicker={<HeroPicker heroes={heroes} selected={search.hero} onSelect={(key) => setSearch({ hero: key })} />}
           heroName={heroName}
+          sections={sectionsFor(search.hero)}
           section={search.stats}
           onSectionChange={(stats) => setSearch({ stats })}
+          heroOverlap={heroOverlap}
+          heroes={heroes}
+          onHeroSelect={(key) => setSearch({ hero: key })}
         />
       </main>
 

@@ -4,12 +4,15 @@ export const GAMEMODES = ['competitive', 'quickplay'] as const
 export const PLATFORMS = ['pc', 'console'] as const
 /** The Stat Row sections the table switches between. Sample Size is always shown. */
 export const STAT_SECTIONS = ['fair', 'volume', 'best'] as const
+/** Everything the section tabs switch between. The Heroes section is only about All Heroes. */
+export const TABLE_SECTIONS = [...STAT_SECTIONS, 'heroes'] as const
 export const ALL_HEROES = 'all-heroes'
 export const MAX_PLAYERS = 5
 
 export type Gamemode = (typeof GAMEMODES)[number]
 export type Platform = (typeof PLATFORMS)[number]
 export type StatSection = (typeof STAT_SECTIONS)[number]
+export type TableSection = (typeof TABLE_SECTIONS)[number]
 
 /** Everything that defines a Matchup, plus which stats it's showing, as it lives in the URL. */
 export type MatchupSearch = {
@@ -19,21 +22,32 @@ export type MatchupSearch = {
   hero: string
   gamemode: Gamemode
   platform: Platform
-  stats: StatSection
+  stats: TableSection
 }
 
 const HERO_KEY = /^[a-z0-9-]+$/
 
 export function parseMatchupSearch(query: string): MatchupSearch {
   const params = new URLSearchParams(query)
-  const hero = params.get('hero') ?? ''
+  const heroParam = params.get('hero') ?? ''
+  const hero = HERO_KEY.test(heroParam) ? heroParam : ALL_HEROES
   return {
     players: parsePlayers(params.get('players') ?? ''),
-    hero: HERO_KEY.test(hero) ? hero : ALL_HEROES,
+    hero,
     gamemode: oneOf(GAMEMODES, params.get('gamemode')) ?? 'competitive',
     platform: oneOf(PLATFORMS, params.get('platform')) ?? 'pc',
-    stats: oneOf(STAT_SECTIONS, params.get('stats')) ?? 'fair',
+    stats: sectionFor(hero, oneOf(TABLE_SECTIONS, params.get('stats')) ?? 'fair'),
   }
+}
+
+/** The sections a Hero Scope offers. */
+export function sectionsFor(hero: string): readonly TableSection[] {
+  return hero === ALL_HEROES ? TABLE_SECTIONS : STAT_SECTIONS
+}
+
+/** The section to show: the one asked for, or Fair Stats if the Hero Scope doesn't offer it. */
+export function sectionFor(hero: string, section: TableSection): TableSection {
+  return sectionsFor(hero).includes(section) ? section : 'fair'
 }
 
 export function stringifyMatchupSearch(search: MatchupSearch): string {

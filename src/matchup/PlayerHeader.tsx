@@ -3,7 +3,6 @@ import type { Hero } from '../api/overfast'
 import { parseBattleTag } from '../domain/battleTag'
 import type { Score } from '../domain/comparison'
 import type { Gamemode, Platform } from '../domain/matchupSearch'
-import { profileChangedAgo } from '../domain/profileChanged'
 import { BattleTagInput } from './BattleTagInput'
 import { rankFor, rankLabel } from './format'
 import type { SlotState } from './useSlots'
@@ -156,33 +155,12 @@ export function PlayerHeader({
             </button>
           </span>
         )}
-        {summary?.last_updated_at && <ProfileChanged seconds={summary.last_updated_at} />}
       </div>
     </SlotFrame>
   )
 }
 
 const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-
-/** Counts up on its own each minute; the time itself only changes when the summary is fetched again. */
-function ProfileChanged({ seconds }: { seconds: number }) {
-  const [now, setNow] = useState(() => new Date())
-  useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 60 * 1000)
-    return () => clearInterval(timer)
-  }, [])
-
-  const changedAt = new Date(seconds * 1000)
-  return (
-    <time
-      className="profile-changed"
-      dateTime={changedAt.toISOString()}
-      title={changedAt.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
-    >
-      {profileChangedAgo(changedAt, now)}
-    </time>
-  )
-}
 
 type EmptyProps = {
   color: string

@@ -796,24 +796,10 @@ main {
 
 /* Pushed to the bottom so Scores line up even when only some Players have a title. */
 .status {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 2px 8px;
   margin-top: auto;
   padding: 4px 10px 10px;
   min-height: 28px;
   font-size: 14px;
-}
-
-.status .message {
-  flex-basis: 100%;
-}
-
-.profile-changed {
-  color: var(--muted);
-  font: 500 13px/1.2 var(--label-font);
 }
 
 .score {

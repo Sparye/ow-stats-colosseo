@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { parseMatchupSearch, stringifyMatchupSearch, type MatchupSearch } from './matchupSearch'
 
+const defaults = parseMatchupSearch('')
+
 describe('parseMatchupSearch', () => {
   it('reads a shared Matchup link', () => {
     expect(
@@ -11,6 +13,10 @@ describe('parseMatchupSearch', () => {
       gamemode: 'quickplay',
       platform: 'console',
       stats: 'fair',
+      benchmark: false,
+      benchmarkTier: null,
+      region: 'all',
+      rankAdjusted: false,
     })
   })
 
@@ -26,6 +32,32 @@ describe('parseMatchupSearch', () => {
       gamemode: 'competitive',
       platform: 'pc',
       stats: 'fair',
+      benchmark: false,
+      benchmarkTier: null,
+      region: 'all',
+      rankAdjusted: false,
+    })
+  })
+
+  it('reads the Benchmark and its pickers', () => {
+    expect(parseMatchupSearch('?benchmark=on&tier=diamond&region=asia')).toMatchObject({
+      benchmark: true,
+      benchmarkTier: 'diamond',
+      region: 'asia',
+    })
+    expect(parseMatchupSearch('?tier=all').benchmarkTier).toBe('all')
+  })
+
+  it('reads the Rank-adjusted toggle', () => {
+    expect(parseMatchupSearch('?adjusted=on').rankAdjusted).toBe(true)
+  })
+
+  it('falls back when the Benchmark and Rank-adjusted values are invalid', () => {
+    expect(parseMatchupSearch('?benchmark=maybe&tier=ultimate&region=mars&adjusted=1')).toMatchObject({
+      benchmark: false,
+      benchmarkTier: null,
+      region: 'all',
+      rankAdjusted: false,
     })
   })
 
@@ -56,6 +88,7 @@ describe('stringifyMatchupSearch', () => {
   it('writes a readable, shareable query string', () => {
     expect(
       stringifyMatchupSearch({
+        ...defaults,
         players: ['TeKrop-2217', 'Other-5678'],
         hero: 'ana',
         gamemode: 'competitive',
@@ -67,12 +100,26 @@ describe('stringifyMatchupSearch', () => {
 
   it('adds the stats only when they are not Fair Stats', () => {
     expect(
-      stringifyMatchupSearch({ players: [], hero: 'ana', gamemode: 'competitive', platform: 'pc', stats: 'volume' }),
+      stringifyMatchupSearch({ ...defaults, players: [], hero: 'ana', gamemode: 'competitive', platform: 'pc', stats: 'volume' }),
     ).toBe('?hero=ana&gamemode=competitive&platform=pc&stats=volume')
   })
 
+  it('adds the Benchmark and Rank-adjusted settings only when they are not the defaults', () => {
+    const on: MatchupSearch = {
+      ...defaults,
+      hero: 'ana',
+      benchmark: true,
+      benchmarkTier: 'diamond',
+      region: 'europe',
+      rankAdjusted: true,
+    }
+    const query = stringifyMatchupSearch(on)
+    expect(query).toBe('?hero=ana&gamemode=competitive&platform=pc&benchmark=on&tier=diamond&region=europe&adjusted=on')
+    expect(parseMatchupSearch(query)).toEqual(on)
+  })
+
   it('keeps non-Latin names readable and round-trips them', () => {
-    const search: MatchupSearch = { players: ['홍길동-31337'], hero: 'all-heroes', gamemode: 'competitive', platform: 'pc', stats: 'fair' }
+    const search: MatchupSearch = { ...defaults, players: ['홍길동-31337'], hero: 'all-heroes', gamemode: 'competitive', platform: 'pc', stats: 'fair' }
     const query = stringifyMatchupSearch(search)
     expect(query).toContain('홍길동-31337')
     expect(parseMatchupSearch(query)).toEqual(search)
@@ -80,7 +127,7 @@ describe('stringifyMatchupSearch', () => {
 
   it('leaves out players when there are none', () => {
     expect(
-      stringifyMatchupSearch({ players: [], hero: 'all-heroes', gamemode: 'competitive', platform: 'pc', stats: 'fair' }),
+      stringifyMatchupSearch({ ...defaults, players: [], hero: 'all-heroes', gamemode: 'competitive', platform: 'pc', stats: 'fair' }),
     ).toBe('?hero=all-heroes&gamemode=competitive&platform=pc')
   })
 })

@@ -28,14 +28,24 @@ export type Comparison = {
   scores: Record<StatSection, Array<Score | null>>
 }
 
+export const WIN_RATE = 'win_percentage'
+
 const SAMPLE_ORDER = ['time_played', 'games_played']
+
+type Options = {
+  /**
+   * What the win rate row's Leader is chosen on instead of the win rates, one per
+   * Slot: their Rank-Adjusted Win Rates. `null` leaves that Player out of the row's comparison.
+   */
+  winRateLeadBy?: Array<number | null>
+}
 
 /**
  * Lines up each Slot's stats into Stat Rows, finds each row's Leaders and
  * counts every Player's Score in each section. Pass `null` for a Slot with no stats to compare
  * (empty, loading, private, or hasn't played the hero).
  */
-export function buildComparison(slots: Array<HeroStats | null>): Comparison {
+export function buildComparison(slots: Array<HeroStats | null>, { winRateLeadBy }: Options = {}): Comparison {
   const labels = new Map<string, string>()
   const valuesBySlot = slots.map((categories) => {
     const values = new Map<string, number>()
@@ -52,7 +62,8 @@ export function buildComparison(slots: Array<HeroStats | null>): Comparison {
   for (const [key, label] of labels) {
     const values = valuesBySlot.map((v) => v.get(key) ?? null)
     const kind = statKind(key)
-    const leaders = kind === 'sample' ? [] : findLeaders(values, isLowerBetter(key))
+    const comparedOn = key === WIN_RATE && winRateLeadBy ? winRateLeadBy : values
+    const leaders = kind === 'sample' ? [] : findLeaders(comparedOn, isLowerBetter(key))
     comparison[kind].push({ key, label, values, leaders })
   }
   comparison.sample.sort((a, b) => SAMPLE_ORDER.indexOf(a.key) - SAMPLE_ORDER.indexOf(b.key))
@@ -71,6 +82,15 @@ export function leadCounts(rows: StatRow[], slotCount: number): number[] {
   const counts = Array<number>(slotCount).fill(0)
   for (const row of rows) for (const slot of row.leaders) counts[slot]++
   return counts
+}
+
+/** One stat from a Player's stats; `null` if they don't have it. */
+export function statValue(stats: HeroStats | null, key: string): number | null {
+  for (const category of stats ?? []) {
+    const stat = category.stats.find((s) => s.key === key)
+    if (stat) return stat.value
+  }
+  return null
 }
 
 function heroSpecificFirst(categories: HeroStats): HeroStats {
